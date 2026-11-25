@@ -538,8 +538,14 @@ _CSS_CAJA = """
 .__C__ [data-baseweb="select"] svg, .__C__ [data-testid="stNumberInput"] svg { fill: rgba(255,255,255,.7) !important; color: rgba(255,255,255,.7) !important; }
 .__C__.__C__.__C__ span[data-baseweb="tag"] { background: linear-gradient(135deg, #6366f1, #8b5cf6) !important; border-radius: 999px !important; }
 .__C__ span[data-baseweb="tag"] * { color: #fff !important; -webkit-text-fill-color: #fff !important; }
-.__C__.__C__.__C__ [data-testid="stNumberInput"] button { border: 0 !important; color: #fff !important; }
-.__C__ [data-testid="stNumberInput"] button:hover { background: rgba(255,255,255,.1) !important; }
+.__C__.__C__.__C__ [data-testid="stNumberInput"] button { border: 0 !important; border-left: 1px solid rgba(255,255,255,.16) !important; color: #eef0ff !important; }
+.__C__ [data-testid="stNumberInput"] button:hover { background: rgba(165,180,252,.18) !important; color: #fff !important; }
+.__C__.__C__.__C__ [data-testid="stNumberInputContainer"],
+.__C__.__C__.__C__ [data-testid="stNumberInput"] [data-baseweb="input"],
+.__C__.__C__.__C__ [data-testid="stNumberInput"] > div > div { border-color: rgba(255,255,255,.22) !important; }
+.__C__.__C__.__C__ [data-testid="stNumberInputContainer"]:focus-within,
+.__C__.__C__.__C__ [data-testid="stNumberInput"] > div > div:focus-within { border-color: #a5b4fc !important; box-shadow: 0 0 0 3px rgba(165,180,252,.28) !important; }
+.__C__.__C__ [data-testid="InputInstructions"] { color: rgba(224,231,255,.82) !important; -webkit-text-fill-color: rgba(224,231,255,.82) !important; }
 
 /* sin contornos ni rayas internas (la línea naranja era el contorno de foco del campo de texto) */
 .__C__.__C__.__C__ [data-baseweb="select"] > div *, .__C__.__C__.__C__ [data-baseweb="select"] input,
