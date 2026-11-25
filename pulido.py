@@ -871,6 +871,17 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   object-fit: contain;
   flex-shrink: 0;
 }
+/* Al hacer clic para escribir en cualquier selectbox, oculta el texto fantasma del equipo anterior */
+[data-testid="stMain"] [data-baseweb="select"]:focus-within div:has(> input) > div:not(:has(input)) {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+[data-testid="stMain"] [data-baseweb="select"]:focus-within input {
+  opacity: 1 !important;
+  color: #0F172A !important;
+  -webkit-text-fill-color: #0F172A !important;
+  font-weight: 600 !important;
+}
 
 /* ───────── Tarjetas, métricas, avisos ───────── */
 [data-testid="stMetric"] {
