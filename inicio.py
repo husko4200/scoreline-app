@@ -858,6 +858,7 @@ def _bloque_jornada(busqueda=""):
     if all(r["ok"] == 0 for r in resumen.values()):
         st.warning("No se pudieron actualizar los marcadores en este momento. Intenta recargar en unos segundos.")
     _render_en_vivo_ahora(partidos, busqueda)
+    _paneles_destacados(partidos)
     _render_explorador_partidos(partidos, busqueda)
     return partidos
 
@@ -882,14 +883,11 @@ def pagina_inicio():
         key="inicio_busqueda",
     )
 
-    # 2. En vivo ahora + Partidos de hoy (auto-actualizable con @st.fragment)
-    partidos = _bloque_jornada(busqueda)
+    # 2. En vivo ahora + Paneles destacados (Partido del día) + Partidos de hoy
+    _bloque_jornada(busqueda)
 
     # 3. Jugadores destacados con foto real y líneas clave
     _render_jugadores_destacados(busqueda)
-
-    # 4. Resumen compacto en 3 columnas
-    _paneles_destacados(partidos)
 
     st.caption(
         "Datos en tiempo real de ESPN y Football-Data · Actualización automática cada 60 s."
