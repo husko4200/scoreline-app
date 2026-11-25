@@ -402,16 +402,26 @@ def _mostrar_detalle_partido(m):
             st.image(a["logo"], width=48)
         st.markdown(f"### {a['nombre']}")
 
-    # Barra de probabilidad
-    st.markdown(
-        f'<div class="sl-prob-wrap"><div class="sl-prob-labels">'
-        f'<span>{h["abrev"] or h["nombre"]} {m["prob_h"]}%</span>'
-        f'<span>Prob. de victoria</span>'
-        f'<span>{m["prob_a"]}% {a["abrev"] or a["nombre"]}</span></div>'
-        f'<div class="sl-prob-bar"><div class="sl-prob-home" style="width:{m["prob_h"]}%;"></div>'
-        f'<div class="sl-prob-away" style="width:{m["prob_a"]}%;"></div></div></div>',
-        unsafe_allow_html=True,
-    )
+    # Barra de probabilidad (solo Pro; en plan gratuito se oculta con dato falso desenfocado)
+    if planes.es_pro():
+        st.markdown(
+            f'<div class="sl-prob-wrap"><div class="sl-prob-labels">'
+            f'<span>{h["abrev"] or h["nombre"]} {m["prob_h"]}%</span>'
+            f'<span>Prob. de victoria</span>'
+            f'<span>{m["prob_a"]}% {a["abrev"] or a["nombre"]}</span></div>'
+            f'<div class="sl-prob-bar"><div class="sl-prob-home" style="width:{m["prob_h"]}%;"></div>'
+            f'<div class="sl-prob-away" style="width:{m["prob_a"]}%;"></div></div></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            planes.html_bloque_pro(
+                "Probabilidad de victoria",
+                "",
+                "EQU 55% · Prob. de victoria · 45% RIV",
+            ),
+            unsafe_allow_html=True,
+        )
 
     # Línea recomendada / Over-Under (solo Pro: en gratis se envía dato de relleno desenfocado)
     linea_real = []
@@ -493,6 +503,7 @@ def _tiempo_restante(fecha_iso):
 def _render_tarjetas_partido(lista, prefijo_key):
     """Dibuja tarjetas limpias de partidos en grilla responsive (1-3 cols) con estado visual, favorito y botones alineados."""
     fav_eqs = set(favoritos.equipos())
+    es_pro_usr = planes.es_pro()
     prev_scores = st.session_state.setdefault("_prev_scores", {})
     n_cols = 2 if len(lista) == 1 else min(3, max(1, len(lista)))
     for i in range(0, len(lista), n_cols):
@@ -513,19 +524,27 @@ def _render_tarjetas_partido(lista, prefijo_key):
                 sc_cls = ("sl-mscore-big" if m["state"] in ("in", "post") else "sl-mscore-big muted") + flash
                 estado_lbl = f"EN VIVO · {m['hora']}" if st_cls == "in" else m["hora"]
 
-                prob_html = (
-                    f'<div class="sl-prob-wrap" title="Probabilidad de victoria estimada según marcador en vivo o hándicap">'
-                    f'<div class="sl-prob-labels">'
-                    f'<span>{m["prob_h"]}%</span>'
-                    f'<span class="sl-prob-title" style="margin:0;">Prob. de victoria</span>'
-                    f'<span>{m["prob_a"]}%</span>'
-                    f'</div>'
-                    f'<div class="sl-prob-bar">'
-                    f'<div class="sl-prob-home" style="width:{m["prob_h"]}%;"></div>'
-                    f'<div class="sl-prob-away" style="width:{m["prob_a"]}%;"></div>'
-                    f'</div>'
-                    f'</div>'
-                )
+                if es_pro_usr:
+                    prob_html = (
+                        f'<div class="sl-prob-wrap" title="Probabilidad de victoria estimada según marcador en vivo o hándicap">'
+                        f'<div class="sl-prob-labels">'
+                        f'<span>{m["prob_h"]}%</span>'
+                        f'<span class="sl-prob-title" style="margin:0;">Prob. de victoria</span>'
+                        f'<span>{m["prob_a"]}%</span>'
+                        f'</div>'
+                        f'<div class="sl-prob-bar">'
+                        f'<div class="sl-prob-home" style="width:{m["prob_h"]}%;"></div>'
+                        f'<div class="sl-prob-away" style="width:{m["prob_a"]}%;"></div>'
+                        f'</div>'
+                        f'</div>'
+                    )
+                else:
+                    prob_html = (
+                        '<div class="sl-pro-locked" style="margin-top:8px;padding:4px 8px;" title="Prob. de victoria solo con Acceso Pro">'
+                        '<div class="sl-pro-blur" aria-hidden="true">55% · Prob. de victoria · 45%</div>'
+                        '<div class="sl-pro-overlay"><span class="sl-gold-tag">★ Acceso Pro</span></div>'
+                        '</div>'
+                    )
                 if st_cls == "pre":
                     rest = _tiempo_restante(m.get("fecha"))
                     extra_txt = rest or "Próximo partido"
@@ -743,6 +762,35 @@ def _paneles_destacados(partidos):
     a_badge = (f'<img src="{_esc(foco["away"]["logo"])}" style="width:42px;height:42px;object-fit:contain;">'
                if foco["away"]["logo"] else f'<div class="potd-badge potd-badge--nap">{_esc(a_ab)}</div>')
 
+    es_pro_pan = planes.es_pro()
+    if es_pro_pan:
+        potd_prob_html = (
+            f'<div class="sl-prob-wrap" style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.14);">'
+            f'<div class="sl-prob-labels" style="color:#E2E8F0;">'
+            f'<span>{int(foco.get("prob_h", 50))}%</span>'
+            f'<span style="font-size:.72rem;color:#94A3B8;font-weight:600;">Prob. de victoria</span>'
+            f'<span>{int(foco.get("prob_a", 50))}%</span>'
+            f'</div>'
+            f'<div class="sl-prob-bar" style="background:rgba(255,255,255,.14);">'
+            f'<div class="sl-prob-home" style="width:{int(foco.get("prob_h", 50))}%;background:#8B5CF6;"></div>'
+            f'<div class="sl-prob-away" style="width:{int(foco.get("prob_a", 50))}%;background:rgba(255,255,255,.16);"></div>'
+            f'</div>'
+            f'</div>'
+        )
+    else:
+        potd_prob_html = (
+            '<div style="position:relative;margin-top:10px;border-radius:10px;overflow:hidden;'
+            'background:rgba(255,255,255,.04);border:1px solid rgba(167,139,250,.22);padding:8px 10px;" title="Acceso Pro">'
+            '<div style="filter:blur(6px);user-select:none;pointer-events:none;font-size:.75rem;color:#CBD5E1;text-align:center;" aria-hidden="true">'
+            '55% · Prob. de victoria · 45%'
+            '</div>'
+            '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">'
+            '<span style="padding:3px 10px;border-radius:999px;background:rgba(124,58,237,.88);color:#fff;font-size:.72rem;font-weight:700;">'
+            '🔒 Acceso Pro</span>'
+            '</div>'
+            '</div>'
+        )
+
     with col2:
         html_col2 = textwrap.dedent(f"""
         <div class="dash-panel-box">
@@ -767,17 +815,7 @@ def _paneles_destacados(partidos):
               <div class="potd-name">{_esc(a_nom)}</div>
             </div>
           </div>
-          <div class="sl-prob-wrap" style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.14);">
-            <div class="sl-prob-labels" style="color:#E2E8F0;">
-              <span>{int(foco.get("prob_h", 50))}%</span>
-              <span style="font-size:.72rem;color:#94A3B8;font-weight:600;">Prob. de victoria</span>
-              <span>{int(foco.get("prob_a", 50))}%</span>
-            </div>
-            <div class="sl-prob-bar" style="background:rgba(255,255,255,.14);">
-              <div class="sl-prob-home" style="width:{int(foco.get("prob_h", 50))}%;background:#8B5CF6;"></div>
-              <div class="sl-prob-away" style="width:{int(foco.get("prob_a", 50))}%;background:rgba(255,255,255,.16);"></div>
-            </div>
-          </div>
+          {potd_prob_html}
         </div>
         """).strip()
         st.markdown(html_col2, unsafe_allow_html=True)
