@@ -513,6 +513,19 @@ def _render_tarjetas_partido(lista, prefijo_key):
                 sc_cls = ("sl-mscore-big" if m["state"] in ("in", "post") else "sl-mscore-big muted") + flash
                 estado_lbl = f"EN VIVO · {m['hora']}" if st_cls == "in" else m["hora"]
 
+                prob_html = (
+                    f'<div class="sl-prob-wrap" title="Probabilidad de victoria estimada según marcador en vivo o hándicap">'
+                    f'<div class="sl-prob-labels">'
+                    f'<span>{m["prob_h"]}%</span>'
+                    f'<span class="sl-prob-title" style="margin:0;">Prob. de victoria</span>'
+                    f'<span>{m["prob_a"]}%</span>'
+                    f'</div>'
+                    f'<div class="sl-prob-bar">'
+                    f'<div class="sl-prob-home" style="width:{m["prob_h"]}%;"></div>'
+                    f'<div class="sl-prob-away" style="width:{m["prob_a"]}%;"></div>'
+                    f'</div>'
+                    f'</div>'
+                )
                 if st_cls == "pre":
                     rest = _tiempo_restante(m.get("fecha"))
                     extra_txt = rest or "Próximo partido"
@@ -521,21 +534,10 @@ def _render_tarjetas_partido(lista, prefijo_key):
                         f'<span>⏱️ {_esc(extra_txt)}</span>'
                         f'<span class="sl-pre-info-sub">{_esc(m["hora"])}</span>'
                         f'</div>'
+                        f'{prob_html}'
                     )
                 else:
-                    pie_html = (
-                        f'<div class="sl-prob-wrap" title="Probabilidad de victoria estimada según marcador en vivo o hándicap">'
-                        f'<div class="sl-prob-labels">'
-                        f'<span>{m["prob_h"]}%</span>'
-                        f'<span class="sl-prob-title" style="margin:0;">Prob. de victoria</span>'
-                        f'<span>{m["prob_a"]}%</span>'
-                        f'</div>'
-                        f'<div class="sl-prob-bar">'
-                        f'<div class="sl-prob-home" style="width:{m["prob_h"]}%;"></div>'
-                        f'<div class="sl-prob-away" style="width:{m["prob_a"]}%;"></div>'
-                        f'</div>'
-                        f'</div>'
-                    )
+                    pie_html = prob_html
 
                 card_html = textwrap.dedent(f"""
                 <div class="{card_cls}" role="article" aria-label="{_esc(h['nombre'])} contra {_esc(a['nombre'])}">
@@ -763,6 +765,17 @@ def _paneles_destacados(partidos):
             <div class="potd-side">
               {a_badge}
               <div class="potd-name">{_esc(a_nom)}</div>
+            </div>
+          </div>
+          <div class="sl-prob-wrap" style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.14);">
+            <div class="sl-prob-labels" style="color:#E2E8F0;">
+              <span>{int(foco.get("prob_h", 50))}%</span>
+              <span style="font-size:.72rem;color:#94A3B8;font-weight:600;">Prob. de victoria</span>
+              <span>{int(foco.get("prob_a", 50))}%</span>
+            </div>
+            <div class="sl-prob-bar" style="background:rgba(255,255,255,.14);">
+              <div class="sl-prob-home" style="width:{int(foco.get("prob_h", 50))}%;background:#8B5CF6;"></div>
+              <div class="sl-prob-away" style="width:{int(foco.get("prob_a", 50))}%;background:rgba(255,255,255,.16);"></div>
             </div>
           </div>
         </div>
