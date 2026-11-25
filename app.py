@@ -100,7 +100,14 @@ def _auto_abrir_sidebar_escritorio():
 (function() {
   try {
     var P = window.parent;
-    if (!P || !P.document || P.__slSbInit) return;
+    if (!P || !P.document) return;
+    if (!P.document.getElementById('sl-hide-st-badges')) {
+      var stStyle = P.document.createElement('style');
+      stStyle.id = 'sl-hide-st-badges';
+      stStyle.textContent = '[data-testid="manage-app-button"],[class*="viewerBadge"],[class*="profileContainer"],[class*="profilePreview"],a[href*="streamlit.io/cloud"],a[href*="share.streamlit.io"]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
+      (P.document.head || P.document.documentElement).appendChild(stStyle);
+    }
+    if (P.__slSbInit) return;
     P.__slSbInit = true;
     for (var i = P.localStorage.length - 1; i >= 0; i--) {
       var k = P.localStorage.key(i);

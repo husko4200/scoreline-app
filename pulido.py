@@ -113,8 +113,17 @@ _CSS = """
 .stDeployButton,
 [data-testid="stAppDeployButton"],
 div[data-testid="stToolbarActions"],
-[data-testid="stMainMenu"] {
+[data-testid="stMainMenu"],
+[data-testid="manage-app-button"],
+[class*="viewerBadge"],
+[class*="profileContainer"],
+[class*="profilePreview"],
+a[href*="streamlit.io/cloud"],
+a[href*="share.streamlit.io"] {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 header, [data-testid="stHeader"] {
   background: transparent !important;

@@ -248,20 +248,50 @@ def iniciar_sesion(email: str, password: str) -> tuple[bool, str]:
     return True, "¡Sesión iniciada con éxito!"
 
 
-def registrar_usuario(nombre: str, email: str, password: str, rol: str = "gratuito", vence: str | None = None) -> tuple[bool, str]:
+def registrar_usuario(
+    nombre: str,
+    email: str,
+    password: str,
+    rol: str = "gratuito",
+    vence: str | None = None,
+    telefono: str = "",
+    como_nos_conociste: str = "",
+    acepta_terminos: bool = True,
+    mayor_18: bool = True,
+    recibir_novedades: bool = False,
+) -> tuple[bool, str]:
+    nombre = nombre.strip()
     email = email.strip().lower()
+    telefono = telefono.strip()
+    como_nos_conociste = como_nos_conociste.strip()
+
+    if not nombre:
+        return False, "Ingresa un nombre de usuario."
     if not email or "@" not in email:
         return False, "Ingresa un correo electrónico válido."
+    if telefono:
+        digitos = "".join(c for c in telefono if c.isdigit())
+        if len(digitos) < 7:
+            return False, "Ingresa un número de teléfono válido."
     if len(password) < 6:
         return False, "La contraseña debe tener al menos 6 caracteres."
+    if not acepta_terminos:
+        return False, "Debes aceptar los Términos y Condiciones para registrarte."
+    if not mayor_18:
+        return False, "Debes confirmar que eres mayor de 18 años."
 
     if _obtener_usuario(email):
         return False, "Ya existe una cuenta con este correo."
 
     salt = _generar_salt()
     nuevo = {
-        "nombre": nombre.strip() or email.split("@")[0],
+        "nombre": nombre or email.split("@")[0],
         "email": email,
+        "telefono": telefono,
+        "como_nos_conociste": como_nos_conociste,
+        "acepta_terminos": bool(acepta_terminos),
+        "mayor_18": bool(mayor_18),
+        "recibir_novedades": bool(recibir_novedades),
         "salt": salt,
         "password_hash": _hashear(password, salt),
         "rol": rol,
@@ -449,15 +479,46 @@ def dialogo_autenticacion():
 
         with t2:
             with st.form("form_modal_reg"):
-                nom = st.text_input("Tu Nombre", placeholder="Carlos", key="m_nom")
-                reg_mail = st.text_input("Correo", placeholder="carlos@correo.com", key="m_reg_mail")
+                nom = st.text_input("Nombre de usuario", placeholder="carlos_99", key="m_nom")
+                reg_mail = st.text_input("Correo electrónico", placeholder="carlos@correo.com", key="m_reg_mail")
+                reg_tel = st.text_input("Número de teléfono", placeholder="+56 9 1234 5678", key="m_reg_tel")
                 reg_pwd = st.text_input("Contraseña (mínimo 6 caracteres)", type="password", key="m_reg_pwd")
+                reg_conociste = st.selectbox(
+                    "¿Cómo nos conociste? (opcional)",
+                    [
+                        "",
+                        "Instagram / TikTok",
+                        "YouTube",
+                        "Google / Buscador",
+                        "Recomendación de un amigo",
+                        "Telegram / WhatsApp",
+                        "Otro",
+                    ],
+                    format_func=lambda x: "Selecciona una opción (opcional)" if x == "" else x,
+                    key="m_reg_conociste",
+                )
+                acepta_terminos = st.checkbox("Acepto los Términos y Condiciones y la Política de Privacidad", key="m_reg_terminos")
+                mayor_18 = st.checkbox("Confirmo que soy mayor de 18 años", key="m_reg_mayor18")
+                recibir_novedades = st.checkbox("Quiero recibir emails con novedades y promociones del sitio (opcional)", key="m_reg_novedades")
                 if st.form_submit_button("Crear cuenta gratuita", use_container_width=True):
-                    ok, msg = registrar_usuario(nom, reg_mail, reg_pwd)
-                    if ok:
-                        st.success(f"{msg} Inicia sesión en la pestaña 'Iniciar Sesión'.")
+                    digitos_tel = "".join(c for c in reg_tel if c.isdigit())
+                    if not reg_tel.strip() or len(digitos_tel) < 7:
+                        st.error("Ingresa un número de teléfono válido.")
                     else:
-                        st.error(msg)
+                        ok, msg = registrar_usuario(
+                            nom,
+                            reg_mail,
+                            reg_pwd,
+                            telefono=reg_tel,
+                            como_nos_conociste=reg_conociste,
+                            acepta_terminos=acepta_terminos,
+                            mayor_18=mayor_18,
+                            recibir_novedades=recibir_novedades,
+                        )
+                        if ok:
+                            st.success(f"{msg} Inicia sesión en la pestaña 'Iniciar Sesión'.")
+                        else:
+                            st.error(msg)
 
         with t3:
             st.markdown(
@@ -583,7 +644,8 @@ def panel_administracion():
                     continue
                 c1, c2, c3, c4 = st.columns([1.5, 1, 1, 1])
                 rol_badge = "⭐ PRO" if u.get("rol") == "pro" else "Gratuito"
-                c1.write(f"**{u.get('nombre')}**\n\n`{mail}`\n\nPlan: **{rol_badge}**")
+                tel_txt = f"\n\nTel: `{u.get('telefono')}`" if u.get("telefono") else ""
+                c1.write(f"**{u.get('nombre')}**\n\n`{mail}`{tel_txt}\n\nPlan: **{rol_badge}**")
                 c2.write(f"Estado: {'✅ Activo' if u.get('activo', True) else '❌ Inactivo'}\nVence: {u.get('vence') or 'Permanente'}")
 
                 # Botón ascender a PRO o bajar a Gratis
