@@ -1457,35 +1457,7 @@ def render(liga, comparativa, jugador=False):
             o1.selectbox("Equipo A", ["—"] + list(ids), key="ff_otro_a", on_change=_elegir_otro, args=("fe_a", "ff_otro_a", ids, region))
             o2.selectbox("Equipo B (opcional)", ["—"] + list(ids), key="ff_otro_b", on_change=_elegir_otro, args=("fe_b", "ff_otro_b", ids, region))
     else:
-        c_sel_a, c_sel_b = st.columns(2, gap="medium")
-        ids_eq = [e["id"] for e in equipos]
-        with c_sel_a:
-            idx_a = ids_eq.index(st.session_state["fe_a"]) if st.session_state["fe_a"] in ids_eq else 0
-            sel_a = st.selectbox(
-                "Equipo A (escribe para buscar)",
-                ids_eq,
-                index=idx_a,
-                format_func=lambda i: por_id[i]["nombre"],
-                key="ff_sel_a_txt",
-            )
-            if sel_a != st.session_state["fe_a"]:
-                st.session_state["fe_a"] = sel_a
-                if st.session_state["fe_b"] == sel_a:
-                    st.session_state["fe_b"] = None
-                st.rerun()
-        with c_sel_b:
-            ops_b = [None] + [i for i in ids_eq if i != st.session_state["fe_a"]]
-            idx_b = ops_b.index(st.session_state["fe_b"]) if st.session_state["fe_b"] in ops_b else 0
-            sel_b = st.selectbox(
-                "Equipo B (opcional, escribe para comparar)",
-                ops_b,
-                index=idx_b,
-                format_func=lambda i: "Ninguno (solo Equipo A)" if i is None else por_id[i]["nombre"],
-                key="ff_sel_b_txt",
-            )
-            if sel_b != st.session_state["fe_b"]:
-                st.session_state["fe_b"] = sel_b
-                st.rerun()
+        fe.selector_equipos(equipos, por_id, key_pref="ff", con_abbr=False)
         with st.expander("🛡️ Elegir desde cuadrícula de escudos", expanded=False):
             st.markdown(_css_escudos(equipos), unsafe_allow_html=True)
             fe._fila_escudos("Equipo A", "fe_a", equipos, por_id)

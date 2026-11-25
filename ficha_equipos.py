@@ -1714,6 +1714,122 @@ def _fila_escudos(titulo, clave, equipos, por_id, bloqueado=None, con_ninguno=Fa
                   help="Analizar solo el Equipo A")
 
 
+def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
+    """Selector moderno de 1 o 2 equipos con botones de modo, escudos chicos y lista oscura."""
+    import json as _json
+    import streamlit.components.v1 as _comp
+
+    ids_eq = [e["id"] for e in equipos]
+    if not ids_eq:
+        return
+    if st.session_state.get("fe_a") not in por_id:
+        st.session_state["fe_a"] = ids_eq[0]
+    if st.session_state.get("fe_b") not in por_id:
+        st.session_state["fe_b"] = None
+
+    k_cmp = f"{key_pref}_modo_cmp"
+    if k_cmp not in st.session_state:
+        st.session_state[k_cmp] = st.session_state.get("fe_b") is not None
+    modo_cmp = bool(st.session_state[k_cmp])
+
+    b1, b2 = st.columns(2, gap="small")
+    if b1.button("📊 Ver stats del equipo", key=f"{key_pref}_btn_uno",
+                 type="primary" if not modo_cmp else "secondary", use_container_width=True):
+        st.session_state[k_cmp] = False
+        st.session_state["fe_b"] = None
+        st.rerun()
+    if b2.button("⚔️ Comparar stats de equipos", key=f"{key_pref}_btn_cmp",
+                 type="primary" if modo_cmp else "secondary", use_container_width=True):
+        st.session_state[k_cmp] = True
+        if st.session_state.get("fe_b") is None:
+            otros = [i for i in ids_eq if i != st.session_state["fe_a"]]
+            st.session_state["fe_b"] = otros[0] if otros else None
+        st.rerun()
+
+    def _etq(i):
+        eq = por_id[i]
+        return f"{eq['nombre']} ({eq['abbr']})" if (con_abbr and eq.get("abbr")) else eq["nombre"]
+
+    def _pill(eq):
+        logo = eq.get("logo") or ""
+        img = f'<img src="{_e(logo)}" alt="">' if logo else "<span>🛡️</span>"
+        st.markdown(f'<div class="sl-team-pill">{img}<span>{_e(_etq(eq["id"]))}</span></div>', unsafe_allow_html=True)
+
+    cols = st.columns(2, gap="medium") if modo_cmp else [st.container()]
+    with cols[0]:
+        _pill(por_id[st.session_state["fe_a"]])
+        idx_a = ids_eq.index(st.session_state["fe_a"]) if st.session_state["fe_a"] in ids_eq else 0
+        sel_a = st.selectbox(
+            "Equipo A (escribe o usa las flechas)",
+            ids_eq,
+            index=idx_a,
+            format_func=_etq,
+            key=f"{key_pref}_sel_a_txt",
+        )
+        if sel_a != st.session_state["fe_a"]:
+            st.session_state["fe_a"] = sel_a
+            if st.session_state["fe_b"] == sel_a:
+                otros = [i for i in ids_eq if i != sel_a]
+                st.session_state["fe_b"] = otros[0] if (modo_cmp and otros) else None
+            st.rerun()
+
+    if modo_cmp:
+        ops_b = [i for i in ids_eq if i != st.session_state["fe_a"]]
+        if ops_b:
+            if st.session_state["fe_b"] not in ops_b:
+                st.session_state["fe_b"] = ops_b[0]
+            with cols[1]:
+                _pill(por_id[st.session_state["fe_b"]])
+                idx_b = ops_b.index(st.session_state["fe_b"])
+                sel_b = st.selectbox(
+                    "Equipo B (escribe o usa las flechas)",
+                    ops_b,
+                    index=idx_b,
+                    format_func=_etq,
+                    key=f"{key_pref}_sel_b_txt",
+                )
+                if sel_b != st.session_state["fe_b"]:
+                    st.session_state["fe_b"] = sel_b
+                    st.rerun()
+
+    logos_map = {_etq(e["id"]): e["logo"] for e in equipos if e.get("logo")}
+    if logos_map:
+        _comp.html(
+            f"""<script>
+(function() {{
+  try {{
+    var P = window.parent;
+    if (!P || !P.document) return;
+    P.__slLogos = Object.assign(P.__slLogos || {{}}, {_json.dumps(logos_map)});
+    function paint() {{
+      var opts = P.document.querySelectorAll('div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]');
+      opts.forEach(function(li) {{
+        var txt = (li.textContent || '').trim();
+        var url = P.__slLogos[txt];
+        if (!url) return;
+        var cur = li.querySelector('img.sl-opt-logo');
+        if (cur && cur.getAttribute('src') === url) return;
+        if (cur) cur.remove();
+        var img = P.document.createElement('img');
+        img.className = 'sl-opt-logo';
+        img.src = url;
+        img.style.cssText = 'width:18px;height:18px;object-fit:contain;flex-shrink:0;margin-right:2px;';
+        li.prepend(img);
+      }});
+    }}
+    if (!P.__slLogoObs) {{
+      P.__slLogoObs = new MutationObserver(paint);
+      P.__slLogoObs.observe(P.document.body, {{ childList: true, subtree: true }});
+    }}
+    paint();
+  }} catch(e) {{}}
+}})();
+</script>""",
+            height=0,
+            width=0,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Pantalla
 # ---------------------------------------------------------------------------
@@ -1729,41 +1845,7 @@ def render():
     actual = _temporada_actual()
     temporadas = (actual, actual - 1)  # temporada actual y anterior, por si aún van pocos partidos
 
-    st.session_state.setdefault("fe_a", equipos[0]["id"])
-    st.session_state.setdefault("fe_b", None)
-    if st.session_state["fe_a"] not in por_id:
-        st.session_state["fe_a"] = equipos[0]["id"]
-    if st.session_state["fe_b"] not in por_id:
-        st.session_state["fe_b"] = None
-    c_sel_a, c_sel_b = st.columns(2, gap="medium")
-    ids_eq = [e["id"] for e in equipos]
-    with c_sel_a:
-        idx_a = ids_eq.index(st.session_state["fe_a"]) if st.session_state["fe_a"] in ids_eq else 0
-        sel_a = st.selectbox(
-            "Equipo A (escribe para buscar)",
-            ids_eq,
-            index=idx_a,
-            format_func=lambda i: f"{por_id[i]['nombre']} ({por_id[i]['abbr']})",
-            key="fe_sel_a_txt",
-        )
-        if sel_a != st.session_state["fe_a"]:
-            st.session_state["fe_a"] = sel_a
-            if st.session_state["fe_b"] == sel_a:
-                st.session_state["fe_b"] = None
-            st.rerun()
-    with c_sel_b:
-        ops_b = [None] + [i for i in ids_eq if i != st.session_state["fe_a"]]
-        idx_b = ops_b.index(st.session_state["fe_b"]) if st.session_state["fe_b"] in ops_b else 0
-        sel_b = st.selectbox(
-            "Equipo B (opcional, escribe para comparar)",
-            ops_b,
-            index=idx_b,
-            format_func=lambda i: "Ninguno (solo Equipo A)" if i is None else f"{por_id[i]['nombre']} ({por_id[i]['abbr']})",
-            key="fe_sel_b_txt",
-        )
-        if sel_b != st.session_state["fe_b"]:
-            st.session_state["fe_b"] = sel_b
-            st.rerun()
+    selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True)
 
     with st.expander("🛡️ Elegir desde cuadrícula de escudos", expanded=False):
         st.markdown(_css_escudos(equipos), unsafe_allow_html=True)

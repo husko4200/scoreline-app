@@ -812,6 +812,66 @@ body .stApp [data-testid="stMain"] .stButton > button[kind="primary"] * {
 [data-baseweb="tag"] * { color: var(--pl-acc-osc) !important; }
 [data-baseweb="slider"], [data-baseweb="checkbox"] { filter: __FILTRO__ !important; }
 
+/* Menú desplegable de selectores (tema oscuro ScoreLine + resalte al bajar con teclas) */
+div[data-baseweb="popover"] > div,
+div[data-baseweb="popover"] ul[role="listbox"] {
+  background: linear-gradient(180deg, #131836 0%, #0B0F20 100%) !important;
+  border: 1px solid rgba(139, 92, 246, .45) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 16px 36px rgba(11, 15, 32, .45) !important;
+  color: #E2E8F0 !important;
+}
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"] {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 9px 12px !important;
+  margin: 2px 6px !important;
+  border-radius: 9px !important;
+  border-left: 3px solid transparent !important;
+  color: #E2E8F0 !important;
+  font-size: .88rem !important;
+  background: transparent !important;
+  transition: background .12s ease, border-color .12s ease !important;
+}
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][aria-selected="true"],
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][data-highlighted="true"],
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover,
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:focus {
+  background: linear-gradient(90deg, rgba(99, 102, 241, .45), rgba(139, 92, 246, .25)) !important;
+  border-left: 3px solid #A855F7 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][aria-selected="true"]::after,
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][data-highlighted="true"]::after,
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
+  content: "↵";
+  margin-left: auto;
+  color: #C4B5FD;
+  font-size: .82rem;
+  font-weight: 700;
+}
+.sl-team-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  margin-bottom: 6px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #131836 0%, #1B2148 100%);
+  border: 1px solid rgba(139, 92, 246, .38);
+  color: #F8FAFC;
+  font-size: .84rem;
+  font-weight: 700;
+}
+.sl-team-pill img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 /* ───────── Tarjetas, métricas, avisos ───────── */
 [data-testid="stMetric"] {
   background: var(--pl-card) !important;
