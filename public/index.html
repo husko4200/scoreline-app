@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScoreLine · Inteligencia Deportiva</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b0f20;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #eef0f8;
+    }
+    .sl-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: center;
+      padding: 24px;
+      background: radial-gradient(circle at top, #172042 0%, #0b0f20 70%);
+      z-index: 1;
+    }
+    .sl-loader h1 { font-size: 1.4rem; letter-spacing: 0.02em; }
+    .sl-loader p { font-size: 0.92rem; color: #9aa4c7; max-width: 420px; line-height: 1.5; }
+    .sl-btn {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      background: #4f46e5;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    iframe#sl-app {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      z-index: 2;
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div class="sl-loader" id="sl-fallback">
+    <h1>⚡ ScoreLine</h1>
+    <p id="sl-msg">Cargando análisis deportivo...</p>
+    <a class="sl-btn" id="sl-direct" href="#" rel="noopener" style="display:none;">Abrir aplicación directamente</a>
+  </div>
+  <iframe id="sl-app" title="ScoreLine Analytics" allow="microphone; clipboard-write"></iframe>
+
+  <script>
+    // Reemplaza esta URL por la URL real que te dio Streamlit Community Cloud (sin "/" al final)
+    var STREAMLIT_APP_URL = "https://TU-APP.streamlit.app";
+
+    (function () {
+      var frame = document.getElementById("sl-app");
+      var msg = document.getElementById("sl-msg");
+      var link = document.getElementById("sl-direct");
+
+      if (!STREAMLIT_APP_URL || STREAMLIT_APP_URL.indexOf("TU-APP") !== -1) {
+        frame.style.display = "none";
+        msg.textContent = "Falta configurar STREAMLIT_APP_URL en public/index.html con la URL de tu app en Streamlit Community Cloud.";
+        return;
+      }
+
+      var base = STREAMLIT_APP_URL.replace(/\/+$/, "");
+      frame.src = base + "/?embed=true";
+      link.href = base;
+      link.style.display = "inline-block";
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --txt: #31333f; --pri: #6366f1; --fondo2: #f0f2f6; }
+  html, body { margin: 0; padding: 0; background: transparent; font-family: "Source Sans Pro", system-ui, sans-serif; color: var(--txt); }
+  #raiz { padding: 2px 3px 4px; }
+  .fila { display: flex; align-items: center; gap: 8px; height: 44px; }
+  button, select { font: inherit; color: var(--txt); background: var(--fondo2); border: 1px solid rgba(127,127,127,.35); border-radius: 999px; }
+  button { flex: 0 0 auto; padding: 0 16px; height: 40px; cursor: pointer; font-weight: 700; white-space: nowrap; transition: transform .15s ease, box-shadow .15s ease; }
+  button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,.25); }
+  button.on { background: #ef4444; border-color: #ef4444; color: #fff; animation: pulso 1.2s ease-in-out infinite; }
+  select { flex: 0 0 auto; height: 40px; padding: 0 8px; cursor: pointer; }
+  #estado { font-size: .85rem; line-height: 1.3; white-space: normal; word-break: break-word; margin-top: 2px; }
+  #estado.tenue { opacity: .7; }
+  #estado:empty { display: none; }
+  @keyframes pulso { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.5); } 50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } }
+</style>
+</head>
+<body>
+<div id="raiz">
+  <div class="fila">
+    <button id="mic" type="button" title="Di el equipo local y después el visitante">🎤 Decir equipos</button>
+    <select id="idioma" title="Idioma del reconocimiento de voz">
+      <option value="es-CL">ES</option>
+      <option value="en-US">EN</option>
+    </select>
+  </div>
+  <div id="estado"></div>
+</div>
+<script>
+  // ---------- Protocolo mínimo de componentes de Streamlit ----------
+  function enviar(tipo, extra) {
+    window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: tipo }, extra || {}), "*");
+  }
+  function ajustarAlto() {
+    var alto = document.getElementById("raiz").offsetHeight + 6;
+    enviar("streamlit:setFrameHeight", { height: Math.max(alto, 48) });
+  }
+  enviar("streamlit:componentReady", { apiVersion: 1 });
+  ajustarAlto();
+  window.addEventListener("resize", ajustarAlto);
+
+  window.addEventListener("message", function (e) {
+    if (!e.data || e.data.type !== "streamlit:render") return;
+    var t = e.data.theme || (e.data.args && e.data.args.theme);
+    if (!t) return;
+    var r = document.documentElement.style;
+    if (t.textColor) r.setProperty("--txt", t.textColor);
+    if (t.primaryColor) r.setProperty("--pri", t.primaryColor);
+    if (t.secondaryBackgroundColor) r.setProperty("--fondo2", t.secondaryBackgroundColor);
+  });
+
+  // ---------- Elementos y estado ----------
+  var btn = document.getElementById("mic");
+  var sel = document.getElementById("idioma");
+  var estado = document.getElementById("estado");
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var escuchando = false, parar = null;
+  var usarVosk = !SR;            // Brave (o sin API de voz) => motor Vosk dentro del navegador
+  var textoActual = "", ultimoEnviado = "", tEnvio = 0, contador = 0, timerSilencio = null;
+
+  if (navigator.brave && navigator.brave.isBrave) {
+    navigator.brave.isBrave().then(function (es) { if (es) usarVosk = true; });
+  }
+
+  function texto(t, tenue) {
+    estado.textContent = t;
+    estado.className = tenue ? "tenue" : "";
+    ajustarAlto();
+  }
+
+  // Manda lo dicho a Python (en vivo, con un pequeño límite de frecuencia)
+  function mandar(t, parcial) {
+    if (!t) return;
+    ultimoEnviado = t; tEnvio = Date.now();
+    enviar("streamlit:setComponentValue", {
+      value: { texto: t, id: Date.now() + "-" + (++contador), parcial: !!parcial },
+      dataType: "json"
+    });
+  }
+
+  // Se llama cada vez que cambia el texto reconocido (mientras hablas)
+  function actualizar(t) {
+    t = (t || "").replace(/\s+/g, " ").trim();
+    if (t === textoActual) return;
+    textoActual = t;
+    texto(t ? "«" + t + "»" : "Escuchando… di el local y después el visitante", !t);
+    if (t && t !== ultimoEnviado && Date.now() - tEnvio > 500) mandar(t, true);
+    // si dejas de hablar ~2,5 s, termina solo
+    clearTimeout(timerSilencio);
+    if (t) timerSilencio = setTimeout(function () { if (escuchando && parar) parar(); }, 2500);
+  }
+
+  function ui(on) {
+    escuchando = on;
+    btn.classList.toggle("on", on);
+    btn.textContent = on ? "⏹ Escuchando…" : "🎤 Decir equipos";
+  }
+
+  function terminar() {
+    clearTimeout(timerSilencio);
+    ui(false);
+    parar = null;
+    if (textoActual) {
+      mandar(textoActual, false);   // resultado final
+      texto("«" + textoActual + "»");
+    }
+  }
+
+  function mensajeError(codigo) {
+    if (codigo === "not-allowed" || codigo === "service-not-allowed")
+      return "Sin permiso para el micrófono: actívalo con el candado de la barra de direcciones.";
+    if (codigo === "no-speech") return "No te escuché. Prueba otra vez.";
+    if (codigo === "audio-capture") return "No encuentro ningún micrófono.";
+    return "No se pudo usar la voz (" + codigo + ").";
+  }
+
+  // ---------- Motor 1: voz del navegador (Chrome, Edge, Safari) ----------
+  function iniciarNavegador() {
+    var rec = new SR();
+    rec.lang = sel.value;
+    rec.interimResults = true;
+    rec.continuous = true;
+    rec.maxAlternatives = 1;
+    var huboError = false, cayoAVosk = false;
+    parar = function () { try { rec.stop(); } catch (e) {} };
+
+    rec.onstart = function () { ui(true); texto("Escuchando… di el local y después el visitante", true); };
+    rec.onresult = function (ev) {
+      var t = "";
+      for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript + " ";
+      actualizar(t);
+    };
+    rec.onerror = function (ev) {
+      huboError = true;
+      if (ev.error === "network") {          // el navegador bloquea el servicio de voz => motor propio
+        cayoAVosk = true; usarVosk = true; ui(false); iniciarVosk(); return;
+      }
+      texto(mensajeError(ev.error));
+    };
+    rec.onend = function () {
+      if (cayoAVosk) return;
+      if (!textoActual && !huboError) texto("No te escuché. Prueba otra vez.");
+      terminar();
+    };
+    try { rec.start(); } catch (err) { texto("No se pudo iniciar el micrófono."); }
+  }
+
+  // ---------- Motor 2: Vosk (reconocimiento dentro del navegador, sin Google) ----------
+  var BASE = "https://ccoreilly.github.io/vosk-browser/models/";
+  var MODELOS = {
+    "es-CL": BASE + "vosk-model-small-es-0.42.tar.gz",
+    "en-US": BASE + "vosk-model-small-en-us-0.15.tar.gz"
+  };
+  var cacheModelos = {}, promesaLib = null;
+
+  function cargarLibVosk() {
+    if (window.Vosk) return Promise.resolve();
+    if (!promesaLib) promesaLib = new Promise(function (ok, mal) {
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/vosk-browser@0.0.5/dist/vosk.js";
+      s.onload = ok; s.onerror = function () { promesaLib = null; mal(new Error("no se pudo descargar la librería de voz")); };
+      document.head.appendChild(s);
+    });
+    return promesaLib;
+  }
+  function cargarModelo(idioma) {
+    if (!cacheModelos[idioma]) {
+      cacheModelos[idioma] = cargarLibVosk().then(function () { return window.Vosk.createModel(MODELOS[idioma]); })
+        .catch(function (e) { delete cacheModelos[idioma]; throw e; });
+    }
+    return cacheModelos[idioma];
+  }
+
+  function iniciarVosk() {
+    var cancelado = false;
+    var ac = new (window.AudioContext || window.webkitAudioContext)();   // se crea dentro del clic
+    var stream = null, nodo = null, fuente = null, recog = null, finales = [];
+    ui(true);
+    parar = function () { cancelado = true; limpiar(); terminar(); };
+    texto("Cargando el modelo de voz… (solo tarda la primera vez, ~40 MB)", true);
+
+    function limpiar() {
+      try { if (nodo) { nodo.onaudioprocess = null; nodo.disconnect(); } } catch (e) {}
+      try { if (fuente) fuente.disconnect(); } catch (e) {}
+      try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+      try { if (recog) recog.remove(); } catch (e) {}
+      try { ac.close(); } catch (e) {}
+    }
+
+    Promise.all([
+      cargarModelo(sel.value),
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 }, video: false })
+    ]).then(function (r) {
+      if (cancelado) { r[1].getTracks().forEach(function (t) { t.stop(); }); return; }
+      var modelo = r[0]; stream = r[1];
+      if (ac.state === "suspended") ac.resume();
+      recog = new modelo.KaldiRecognizer(ac.sampleRate);
+      recog.on("result", function (m) {
+        var t = m && m.result && m.result.text;
+        if (t) { finales.push(t); actualizar(finales.join(" ")); }
+      });
+      recog.on("partialresult", function (m) {
+        var p = (m && m.result && m.result.partial) || "";
+        actualizar((finales.join(" ") + " " + p));
+      });
+      nodo = ac.createScriptProcessor(4096, 1, 1);
+      nodo.onaudioprocess = function (e) { try { recog.acceptWaveform(e.inputBuffer); } catch (x) {} };
+      fuente = ac.createMediaStreamSource(stream);
+      fuente.connect(nodo); nodo.connect(ac.destination);
+      texto("Escuchando… di el local y después el visitante", true);
+    }).catch(function (err) {
+      cancelado = true; limpiar(); ui(false); parar = null;
+      if (err && (err.name === "NotAllowedError" || err.name === "SecurityError"))
+        texto("Sin permiso para el micrófono: actívalo con el candado de la barra de direcciones.");
+      else if (err && err.name === "NotFoundError") texto("No encuentro ningún micrófono.");
+      else texto("No se pudo cargar el motor de voz: " + (err && err.message ? err.message : err));
+    });
+  }
+
+  // ---------- Botón ----------
+  btn.addEventListener("click", function () {
+    if (escuchando) { if (parar) parar(); return; }
+    textoActual = ""; ultimoEnviado = "";
+    if (usarVosk) iniciarVosk(); else iniciarNavegador();
+  });
+</script>
+</body>
+</html>

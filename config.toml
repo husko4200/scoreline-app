@@ -1,0 +1,4 @@
+# Color de acción único de la app. Con esto, interruptores, sliders y casillas dejan de ser rojos de forma nativa.
+[theme]
+base = "light"
+primaryColor = "#4F46E5"

@@ -1,0 +1,11 @@
+streamlit>=1.40
+pandas>=2.0
+numpy
+altair>=5
+requests
+openpyxl
+Pillow>=10.0
+firebase-admin>=6.5
+anthropic>=0.40
+SpeechRecognition
+tzdata

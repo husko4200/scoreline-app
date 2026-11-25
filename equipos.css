@@ -1,0 +1,28 @@
+.fl.eq .fl-nombre { font-size: 1.9rem; max-width: 70%; }
+.fl.eq .fl-linea { font-size: 3rem; } .fl.eq .fl-pct b { font-size: 2.4rem; }
+.fl.eq .fl-barras { gap: 6px; height: 140px; } .fl.eq .fl-riv { gap: 6px; }
+.fl.eq .fl-b { min-width: 0; overflow: hidden; }
+.fl.eq .fl-barras.denso { gap: 3px; } .fl.eq .fl-barras.denso .fl-b { font-size: .6rem; border-radius: 6px; }
+.fl.eq .fl-riv.denso { gap: 3px; } .fl.eq .fl-riv.denso span { font-size: .5rem; }
+.fl-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 8px; margin-top: 1.1rem; }
+.fl-st { background: rgba(255,255,255,.07); border-radius: 12px; padding: .5rem .7rem; }
+.fl-st small { display: block; font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+.fl-st b { font-size: 1.05rem; font-variant-numeric: tabular-nums; } .fl-st b.pos { color: var(--nba-pos); } .fl-st b.neg { color: var(--nba-neg); }
+.fl-aviso { margin-top: .7rem; font-size: .72rem; color: var(--nba-aviso); }
+.fl.eq .fl-b { position: relative; }
+.fl.eq .fl-b .mk { position: absolute; bottom: 4px; width: 6px; height: 6px; border-radius: 50%; left: 50%; transform: translateX(-50%); }
+.fl.eq .fl-b .mk.a { background: var(--nba-aviso); } .fl.eq .fl-b .mk.r { background: var(--nba-neg); }
+.fl.eq .fl-b .mk.a.dos { left: 32%; } .fl.eq .fl-b .mk.r.dos { left: 68%; }
+.fl.eq .fl-barras.denso .fl-b .mk { width: 4px; height: 4px; bottom: 3px; }
+.fl-sub { margin-top: 1rem; font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+.fl-sub + .fl-stats { margin-top: .4rem; }
+.fl-hoy { margin-top: .9rem; font-size: .78rem; line-height: 1.7; color: rgba(255,255,255,.85); }
+.fl-hoy .tag { display: inline-block; padding: 0 .45rem; border-radius: 6px; font-size: .65rem; font-weight: 700; margin-left: .3rem; background: rgba(251,191,36,.22); color: var(--nba-aviso); }
+.fl-hoy .chip { display: inline-block; padding: .05rem .5rem; margin: 0 .3rem .25rem 0; border-radius: 999px; font-size: .68rem; background: rgba(248,113,113,.18); color: var(--nba-out-claro); }
+.fl-hoy .chip.dud { background: rgba(251,191,36,.16); color: var(--nba-dud-claro); }
+.fl-leyenda { margin-top: .5rem; font-size: .62rem; color: rgba(255,255,255,.55); }
+.fl-leyenda i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin: 0 .25rem 0 .6rem; vertical-align: middle; }
+.fl-leyenda i.a { background: var(--nba-aviso); } .fl-leyenda i.r { background: var(--nba-neg); }
+.fl-leyenda i.o { background: transparent; border-radius: 2px; width: 10px; height: 10px; border: 2px dashed var(--nba-extra); box-sizing: border-box; }
+.fl.eq .fl-b.ot { outline: 2px dashed var(--nba-extra); outline-offset: -3px; }
+.fl-logo { position: absolute; right: 1.3rem; top: 1rem; width: 84px; height: 84px; object-fit: contain; }

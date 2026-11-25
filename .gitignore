@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+.cache_box/
+.cache_picks/
+.cache_jugadores/
+desktop.ini
+*.bat
+*.command
+usuarios.json
+usuarios_planes.json
+.streamlit/secrets.toml
+.env
+*firebase-adminsdk*.json
+firebase-key*.json
+serviceAccountKey*.json

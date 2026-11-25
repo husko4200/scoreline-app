@@ -1,0 +1,42 @@
+ABRIR LA APP
+- Windows: doble clic en Abrir_App.bat
+- Mac/Linux: doble clic (o ./abrir_app.command) en abrir_app.command
+
+La primera vez instala lo necesario (necesita Python 3.10+ e internet).
+Las siguientes veces abre en segundos. Se abre sola en el navegador
+(http://localhost:8501). Para cerrarla, cierra la ventana negra.
+
+QUE HAY DE NUEVO (datos extra)
+
+FUTBOL (football-data.co.uk, sin claves)
+- Mercado y cuotas: probabilidades implicitas sin margen, ROI historico por
+  estrategia, calibracion del mercado, over/under 2.5 y rendimiento de cada
+  equipo frente a lo que esperaba el mercado.
+- Primer tiempo: matriz descanso -> final, goles por tiempo, remontadas.
+- Stats por equipo: tiros, a puerta, corners, faltas, tarjetas, over 2.5,
+  ambos anotan, arco en cero (a favor y en contra, local/visita).
+- Arbitros: tarjetas, faltas, goles y % de local por arbitro.
+- Proximos partidos: cuotas de las siguientes jornadas vs modelo Poisson.
+- Mas ligas: segundas divisiones europeas, Belgica, Turquia, Grecia y
+  Argentina, Brasil, MLS y Liga MX (estas 4 sin tiros/corners/arbitros).
+
+TENIS (Jeff Sackmann, GitHub)
+- Perfil avanzado: mano, altura, edad, puntos de ranking; rendimiento segun
+  mano/altura/edad del rival; 1er set, set decisivo, tie-breaks, BO3/BO5;
+  desgaste (minutos jugados en los 7/14 dias previos).
+- Circuito y torneos: velocidad de cada superficie y torneo (aces, puntos al
+  saque, duracion), sorpresas por ronda, ventaja de zurdos, campeones por
+  torneo, jugadores con mas titulos.
+- Opcion en la barra lateral para sumar Challengers/ITF y clasificatorias.
+
+NBA (ESPN, sin claves)
+- Posiciones por conferencia, reporte de lesiones (tambien en el detalle de
+  cada partido por jugar), plantel.
+- Avanzadas y jugadores: ofensiva/defensiva por 100 posesiones, cuatro
+  factores, estilo de juego, cubre-no cubre el spread y over/under, promedios
+  por jugador y analisis de cualquier jugador contra una linea (over/under).
+- Los box scores se guardan en la carpeta .cache_box (uno por partido), asi
+  cada partido se descarga una sola vez. Se puede borrar sin problema.
+
+Si alguna fuente falla, abre "Diagnostico" y pulsa "Probar conexiones":
+ahora incluye las fuentes nuevas.

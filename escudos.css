@@ -1,0 +1,25 @@
+/* Cuadrícula pareja: 15 columnas x 2 filas (10 x 3 en pantallas angostas), igual para A y B */
+.st-key-fe_a_barra:not(:has(> [data-testid="stVerticalBlock"])), .st-key-fe_a_barra > [data-testid="stVerticalBlock"],
+.st-key-fe_b_barra:not(:has(> [data-testid="stVerticalBlock"])), .st-key-fe_b_barra > [data-testid="stVerticalBlock"] {
+  display: grid !important; grid-template-columns: repeat(15, 32px) !important; gap: 6px !important; justify-content: start; margin: .1rem 0 .7rem;
+}
+/* Pantallas angostas: tantas columnas como quepan (antes 10 fijas = ~400 px con el relleno de la tarjeta, y se salían del celular) */
+@media (max-width: 700px) {
+  .st-key-fe_a_barra:not(:has(> [data-testid="stVerticalBlock"])), .st-key-fe_a_barra > [data-testid="stVerticalBlock"],
+  .st-key-fe_b_barra:not(:has(> [data-testid="stVerticalBlock"])), .st-key-fe_b_barra > [data-testid="stVerticalBlock"] { grid-template-columns: repeat(auto-fill, 32px) !important; }
+}
+/* La tarjeta blanca (relleno de 12 px, definido en nba_panel) nunca debe ser más ancha que su columna */
+.st-key-fe_a_barra, .st-key-fe_b_barra { box-sizing: border-box !important; max-width: 100% !important; overflow-x: auto; }
+.st-key-fe_a_barra [data-testid="stElementContainer"], .st-key-fe_b_barra [data-testid="stElementContainer"] { width: 32px !important; flex: none !important; }
+.st-key-fe_a_barra button[data-testid^="stBaseButton"], .st-key-fe_b_barra button[data-testid^="stBaseButton"] {
+  width: 32px !important; min-width: 32px !important; height: 32px !important; min-height: 32px !important; padding: 0 !important;
+  border-radius: 9px !important; transform: none !important; border: 1px solid var(--borde, rgba(127,127,127,.25)) !important; box-shadow: none !important;
+  background-color: rgba(127,127,127,.07) !important; background-repeat: no-repeat !important; background-position: center !important;
+  background-size: 76% !important; color: transparent !important; transition: transform .15s ease, background-color .15s ease;
+}
+.st-key-fe_a_barra button *, .st-key-fe_b_barra button * { font-size: 0 !important; }
+.st-key-fe_a_barra button:hover, .st-key-fe_b_barra button:hover { transform: none !important; background-color: rgba(127,127,127,.2) !important; border-color: var(--nba-acento) !important; }
+.st-key-fe_a_barra button[data-testid="stBaseButton-primary"], .st-key-fe_b_barra button[data-testid="stBaseButton-primary"] {
+  background-color: rgba(79,70,229,.30) !important; border: 2px solid var(--nba-acento) !important; box-shadow: 0 0 0 3px rgba(99,102,241,.25) !important; transform: none !important;
+}
+.st-key-fe_a_barra button:disabled, .st-key-fe_b_barra button:disabled { opacity: .3 !important; transform: none; }
