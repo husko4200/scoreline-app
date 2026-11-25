@@ -115,6 +115,8 @@ _CSS = """
 div[data-testid="stToolbarActions"],
 [data-testid="stMainMenu"],
 [data-testid="manage-app-button"],
+[data-testid="stEmbedFooter"],
+[class*="embedFooter"],
 [class*="viewerBadge"],
 [class*="profileContainer"],
 [class*="profilePreview"],
@@ -133,6 +135,9 @@ header, [data-testid="stHeader"] {
 }
 [data-testid="stMain"] {
   overflow-x: hidden !important;
+}
+[data-testid="stMainBlockContainer"] {
+  padding-bottom: 56px !important;
 }
 [data-testid="stToolbar"] {
   background: transparent !important;
