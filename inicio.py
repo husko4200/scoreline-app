@@ -794,6 +794,60 @@ def _paneles_destacados(partidos):
             etiquetas = {"1": f"{h_nom} (54% consenso)", "X": "Empate (24% consenso)", "2": f"{a_nom} (46% consenso)"}
             st.markdown(f'<div class="potd-pick-msg">Tu voto: {_esc(etiquetas.get(voto, h_nom))}</div>', unsafe_allow_html=True)
 
+        if len(partidos) > 1:
+            foco2 = partidos[1]
+            h2_nom = foco2["home"]["nombre"]
+            a2_nom = foco2["away"]["nombre"]
+            h2_ab = (foco2["home"].get("abrev") or h2_nom[:3]).upper()
+            a2_ab = (foco2["away"].get("abrev") or a2_nom[:3]).upper()
+            h2_badge = (f'<img src="{_esc(foco2["home"]["logo"])}" style="width:32px;height:32px;object-fit:contain;">'
+                        if foco2["home"]["logo"] else f'<div class="potd-badge potd-badge--mc" style="width:32px;height:32px;font-size:.7rem;">{_esc(h2_ab)}</div>')
+            a2_badge = (f'<img src="{_esc(foco2["away"]["logo"])}" style="width:32px;height:32px;object-fit:contain;">'
+                        if foco2["away"]["logo"] else f'<div class="potd-badge potd-badge--nap" style="width:32px;height:32px;font-size:.7rem;">{_esc(a2_ab)}</div>')
+
+            es_pro_usr = planes.es_pro()
+            if es_pro_usr:
+                ph, pa = int(foco2.get("prob_h", 50)), int(foco2.get("prob_a", 50))
+                fav_nom = h2_nom if ph >= pa else a2_nom
+                fav_pct = max(ph, pa)
+                bloque2_res = (
+                    f'<div class="potd-pick-msg" style="margin-top:8px;">'
+                    f'★ Favorito Pro: <b>{_esc(fav_nom)}</b> ({fav_pct}% prob. de victoria)'
+                    f'</div>'
+                )
+            else:
+                bloque2_res = (
+                    '<div class="sl-pro-locked" style="margin-top:8px;min-height:42px;" title="Acceso Pro">'
+                    '<div class="sl-pro-blur" aria-hidden="true">Favorito: Equipo Local · 64% prob. de victoria</div>'
+                    '<div class="sl-pro-overlay"><span class="sl-gold-tag">★ Acceso Pro</span></div>'
+                    '</div>'
+                )
+
+            html_col2_b = textwrap.dedent(f"""
+            <div class="dash-panel-box" style="margin-top:10px;padding:12px 14px;">
+              <div class="dp-header" style="margin-bottom:6px;">
+                <span class="dp-kicker">¿QUIÉN GANARÁ?</span>
+                <span class="dp-time-tag">{_esc(foco2["liga"])} · {_esc(foco2["hora"])}</span>
+              </div>
+              <div class="potd-matchup" style="margin-bottom:0;padding:8px 10px;">
+                <div class="potd-side">
+                  {h2_badge}
+                  <div class="potd-name" style="font-size:.78rem;">{_esc(h2_nom)}</div>
+                </div>
+                <div class="potd-vs">vs</div>
+                <div class="potd-side">
+                  {a2_badge}
+                  <div class="potd-name" style="font-size:.78rem;">{_esc(a2_nom)}</div>
+                </div>
+              </div>
+              {bloque2_res}
+            </div>
+            """).strip()
+            st.markdown(html_col2_b, unsafe_allow_html=True)
+            if not es_pro_usr:
+                if st.button("🔒 Acceso Pro", key="btn_potd2_pro", use_container_width=True):
+                    planes.modal_pro("Desbloquea el pronóstico de todos los partidos del día con ScoreLine Pro.")
+
     with col3:
         try:
             n_alertas = len(favoritos.equipos()) + len(favoritos.jugadores())
