@@ -168,13 +168,24 @@ header, [data-testid="stHeader"] {
   height: 20px !important;
 }
 [data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarCollapseButton"] button {
+[data-testid="stSidebarCollapseButton"] *,
+[data-testid="stSidebarHeader"] button,
+[data-testid="stSidebarHeader"] button * {
   pointer-events: auto !important;
-  color: rgba(255,255,255,.78) !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
 }
-[data-testid="stSidebarCollapseButton"] svg {
-  fill: rgba(255,255,255,.78) !important;
-  stroke: rgba(255,255,255,.78) !important;
+[data-testid="stSidebarCollapseButton"] button,
+[data-testid="stSidebarHeader"] button {
+  background: rgba(255,255,255,.12) !important;
+  border: 1px solid rgba(255,255,255,.22) !important;
+  border-radius: 10px !important;
+}
+[data-testid="stSidebarCollapseButton"] svg,
+[data-testid="stSidebarHeader"] button svg {
+  fill: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
 }
 
 /* ───────── Marca de agua "SL" sutil en esquina inferior ───────── */
