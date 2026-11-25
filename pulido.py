@@ -1587,7 +1587,7 @@ body .stApp [data-testid="stMain"] .stButton > button[kind="primary"] * {
     padding-left: .85rem !important;
     padding-right: .85rem !important;
     padding-top: 3.65rem !important;
-    padding-bottom: 5.2rem !important;
+    padding-bottom: 7.5rem !important;
   }
   .stButton > button,
   .stDownloadButton > button,
