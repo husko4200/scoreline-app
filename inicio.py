@@ -811,33 +811,51 @@ def _paneles_destacados(partidos):
                 fav_nom = h2_nom if ph >= pa else a2_nom
                 fav_pct = max(ph, pa)
                 bloque2_res = (
-                    f'<div class="potd-pick-msg" style="margin-top:8px;">'
-                    f'★ Favorito Pro: <b>{_esc(fav_nom)}</b> ({fav_pct}% prob. de victoria)'
+                    f'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;'
+                    f'background:rgba(139,92,246,.16);border:1px solid rgba(167,139,250,.38);'
+                    f'color:#F8FAFC;font-size:.82rem;display:flex;justify-content:space-between;align-items:center;">'
+                    f'<span>★ <b>{_esc(fav_nom)}</b></span>'
+                    f'<span style="color:#C4B5FD;font-weight:700;">{fav_pct}% prob.</span>'
                     f'</div>'
                 )
             else:
                 bloque2_res = (
-                    '<div class="sl-pro-locked" style="margin-top:8px;min-height:42px;" title="Acceso Pro">'
-                    '<div class="sl-pro-blur" aria-hidden="true">Favorito: Equipo Local · 64% prob. de victoria</div>'
-                    '<div class="sl-pro-overlay"><span class="sl-gold-tag">★ Acceso Pro</span></div>'
+                    '<div style="position:relative;margin-top:10px;border-radius:12px;overflow:hidden;'
+                    'background:rgba(255,255,255,.04);border:1px solid rgba(167,139,250,.22);padding:14px 12px;min-height:66px;" '
+                    'title="Acceso Pro">'
+                    '<div style="filter:blur(7px);user-select:none;pointer-events:none;opacity:.75;" aria-hidden="true">'
+                    '<div style="height:10px;width:72%;background:rgba(196,181,253,.45);border-radius:6px;margin-bottom:8px;"></div>'
+                    '<div style="font-size:.78rem;color:#CBD5E1;">Pick principal: Equipo Local · Cuota 1.92 · Confianza alta</div>'
+                    '</div>'
+                    '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;'
+                    'background:radial-gradient(circle, rgba(11,15,32,.35) 0%, rgba(11,15,32,.75) 100%);">'
+                    '<span style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;'
+                    'background:linear-gradient(135deg,#7C3AED,#A855F7);color:#FFFFFF;font-size:.78rem;font-weight:700;'
+                    'box-shadow:0 4px 16px rgba(124,58,237,.45);border:1px solid rgba(255,255,255,.22);">'
+                    '🔒 Acceso Pro</span>'
+                    '</div>'
                     '</div>'
                 )
 
             html_col2_b = textwrap.dedent(f"""
-            <div class="dash-panel-box" style="margin-top:10px;padding:12px 14px;">
-              <div class="dp-header" style="margin-bottom:6px;">
-                <span class="dp-kicker">¿QUIÉN GANARÁ?</span>
-                <span class="dp-time-tag">{_esc(foco2["liga"])} · {_esc(foco2["hora"])}</span>
+            <div style="margin-top:10px;padding:14px;border-radius:16px;
+                        background:linear-gradient(160deg,#131836 0%,#0B0F20 100%);
+                        border:1px solid rgba(139,92,246,.42);
+                        box-shadow:0 10px 26px rgba(11,15,32,.28);color:#F8FAFC;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:.72rem;font-weight:700;letter-spacing:.05em;color:#C4B5FD;">¿QUIÉN GANARÁ?</span>
+                <span style="font-size:.72rem;color:#94A3B8;">{_esc(foco2["liga"])} · {_esc(foco2["hora"])}</span>
               </div>
-              <div class="potd-matchup" style="margin-bottom:0;padding:8px 10px;">
-                <div class="potd-side">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;
+                          padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);">
+                <div style="display:flex;align-items:center;gap:6px;min-width:0;">
                   {h2_badge}
-                  <div class="potd-name" style="font-size:.78rem;">{_esc(h2_nom)}</div>
+                  <span style="font-size:.82rem;font-weight:700;color:#F8FAFC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(h2_nom)}</span>
                 </div>
-                <div class="potd-vs">vs</div>
-                <div class="potd-side">
+                <span style="font-size:.72rem;color:#64748B;font-weight:700;">vs</span>
+                <div style="display:flex;align-items:center;gap:6px;min-width:0;justify-content:flex-end;">
+                  <span style="font-size:.82rem;font-weight:700;color:#F8FAFC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(a2_nom)}</span>
                   {a2_badge}
-                  <div class="potd-name" style="font-size:.78rem;">{_esc(a2_nom)}</div>
                 </div>
               </div>
               {bloque2_res}
