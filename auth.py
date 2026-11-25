@@ -369,6 +369,20 @@ _CSS_AUTH = """
     border-radius: 4px;
     margin-right: 0.4rem;
 }
+.sl-auth-status {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding-top: 0.35rem;
+}
+@media (max-width: 768px) {
+    .sl-auth-status {
+        justify-content: center !important;
+        text-align: center !important;
+        width: 100% !important;
+        padding-top: 0 !important;
+    }
+}
 </style>
 """
 
@@ -387,14 +401,14 @@ def barra_superior():
                 if es_admin():
                     badge = '<span class="auth-badge-pro" style="background:#4F46E5;">👑 ADMIN</span>'
                 st.markdown(
-                    f'<div style="display:flex; align-items:center; gap:0.6rem; padding-top:0.35rem;">'
+                    f'<div class="sl-auth-status">'
                     f'<span style="font-weight:700; color:#0F172A;">Hola, {usr.get("nombre")}</span> {badge}'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
             else:
                 st.markdown(
-                    '<div style="display:flex; align-items:center; gap:0.5rem; padding-top:0.35rem;">'
+                    '<div class="sl-auth-status" style="gap:0.5rem;">'
                     '<span style="font-weight:700; color:#0F172A;">ScoreLine · Acceso gratuito</span> '
                     '</div>',
                     unsafe_allow_html=True,

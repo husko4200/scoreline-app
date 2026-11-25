@@ -1586,17 +1586,24 @@ body .stApp [data-testid="stMain"] .stButton > button[kind="primary"] * {
   .block-container {
     padding-left: .85rem !important;
     padding-right: .85rem !important;
-    padding-top: 3rem !important;
+    padding-top: 3.65rem !important;
     padding-bottom: 5.2rem !important;
   }
   .stButton > button,
   .stDownloadButton > button,
   button[data-baseweb="tab"],
-  [data-testid="stSidebar"] div[role="radiogroup"] label,
-  [data-testid="stExpandSidebarButton"],
-  [data-testid="stSidebarCollapsedControl"] {
+  [data-testid="stSidebar"] div[role="radiogroup"] label {
     min-height: 44px !important;
     min-width: 44px !important;
+  }
+  [data-testid="stExpandSidebarButton"],
+  [data-testid="stSidebarCollapsedControl"] {
+    top: 8px !important;
+    left: 10px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
   }
   .sl-mobile-nav {
     display: flex !important;
