@@ -916,7 +916,6 @@ def _render_en_vivo_ahora(partidos, filtro_texto=""):
         f'<span class="sl-live-pill"><span class="ticker-live-dot"></span>EN VIVO AHORA</span>'
         f'<span class="sl-live-meta">{len(vivos)} {"partido en juego" if len(vivos) == 1 else "partidos en juego"}</span>'
         f'</div>'
-        f'<span class="sl-sec-sub">Actualización automática cada 60 s</span>'
         f'</div>',
         unsafe_allow_html=True,
     )

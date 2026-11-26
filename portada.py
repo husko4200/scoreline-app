@@ -456,12 +456,12 @@ def _cuerpo():
                 st.session_state["pt_ver_todos"] = not ver_todos
                 st.rerun()
             c_upd.markdown(
-                f'<div style="text-align:right;font-size:.76rem;color:#64748B;">Actualizado {hora_act} · Actualización automática cada 60 s</div>',
+                f'<div style="text-align:right;font-size:.76rem;color:#64748B;">Actualizado {hora_act}</div>',
                 unsafe_allow_html=True,
             )
         else:
             st.markdown(
-                f'<div style="font-size:.76rem;color:#64748B;margin-top:4px;">Actualizado {hora_act} · Actualización automática cada 60 s</div>',
+                f'<div style="font-size:.76rem;color:#64748B;margin-top:4px;">Actualizado {hora_act}</div>',
                 unsafe_allow_html=True,
             )
 
