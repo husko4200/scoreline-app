@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 from datetime import date
 import hashlib
+from html import escape as _esc
 import re as _re
 
 
@@ -398,6 +399,13 @@ def modal_chat(seccion_actual: str = "") -> None:
             key="sl_ai_input",
         )
         enviado = c_btn.form_submit_button("Enviar", type="primary", use_container_width=True)
+
+    # Barra de acciones debajo del formulario
+    if msgs:
+        _c_clear, _ = st.columns([1, 3])
+        if _c_clear.button("🗑 Nuevo chat", key="sl_ai_clear", type="tertiary"):
+            st.session_state["sl_ai_msgs"] = []
+            st.rerun()
 
     pregunta = (pregunta_chip or (texto if enviado else "")).strip()
     if pregunta:

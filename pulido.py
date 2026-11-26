@@ -1281,7 +1281,8 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 1px solid #C7D2FE;
+  border: 1.5px solid rgba(94, 234, 212, .5);
+  background: #1E1B4B;
 }
 .sl-ai-bubble {
   max-width: 82%;
@@ -1336,9 +1337,10 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   position: relative;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #E2E8F0;
+  border: 1px solid rgba(99, 102, 241, .2);
   min-height: 240px;
   margin-bottom: 12px;
+  background: #0D0A26;
 }
 .sl-ai-blurred-bg {
   filter: blur(7px);
@@ -1356,9 +1358,9 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   justify-content: center;
   text-align: center;
   padding: 20px;
-  background: rgba(255, 255, 255, .68);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(13, 10, 38, .78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   animation: sl-ai-glass-in .35s cubic-bezier(.2, .8, .2, 1) both;
 }
 .sl-ai-glass-bot {
@@ -1366,19 +1368,51 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   height: 92px;
   object-fit: contain;
   margin-bottom: 8px;
-  filter: drop-shadow(0 6px 14px rgba(79, 70, 229, .24));
+  filter: drop-shadow(0 6px 14px rgba(99, 102, 241, .35));
 }
 .sl-ai-glass-title {
   font-size: 1.02rem;
   font-weight: 800;
-  color: #0F172A;
+  color: #FFFFFF;
 }
 .sl-ai-glass-sub {
   font-size: .84rem;
-  color: #475569;
+  color: #94A3B8;
   max-width: 360px;
   margin-top: 4px;
   line-height: 1.4;
+}
+/* Chips de sugerencia del chat */
+[class*="st-key-sl_ai_sug_"] button {
+  background: rgba(99, 102, 241, .12) !important;
+  border: 1px solid rgba(99, 102, 241, .28) !important;
+  color: #C4B5FD !important;
+  border-radius: 10px !important;
+  font-size: .78rem !important;
+  padding: 6px 10px !important;
+  transition: background .15s ease, border-color .15s ease !important;
+}
+[class*="st-key-sl_ai_sug_"] button:hover {
+  background: rgba(99, 102, 241, .24) !important;
+  border-color: rgba(99, 102, 241, .5) !important;
+  color: #E0E7FF !important;
+}
+/* Botón Nuevo chat */
+[class*="st-key-sl_ai_clear"] button {
+  font-size: .76rem !important;
+  color: #64748B !important;
+  opacity: .8;
+}
+[class*="st-key-sl_ai_clear"] button:hover {
+  color: #94A3B8 !important;
+  opacity: 1;
+}
+/* Formulario del chat AI */
+[class*="st-key-sl_ai_form"] {
+  background: rgba(13, 10, 38, .5);
+  border-radius: 12px;
+  padding: 6px !important;
+  border: 1px solid rgba(99, 102, 241, .2);
 }
 /* Al hacer clic para escribir en cualquier selectbox, oculta el texto fantasma del equipo anterior */
 [data-testid="stMain"] [data-baseweb="select"]:focus-within div:has(> input) > div:not(:has(input)) {
