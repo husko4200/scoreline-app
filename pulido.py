@@ -1066,6 +1066,107 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   line-height: 1;
   opacity: .9;
 }
+.sl-cmp-wrap {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px -8px rgba(15, 23, 42, .08);
+  margin: 6px 0 14px;
+}
+.sl-cmp-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+.sl-cmp-tbl thead th {
+  background: #F8FAFC;
+  color: #475569;
+  font-size: .76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 12px 14px;
+  border-bottom: 1px solid #E2E8F0;
+  text-align: left;
+}
+.sl-cmp-tbl thead th.num {
+  text-align: right;
+}
+.sl-cmp-tbl thead th.cen {
+  text-align: center;
+}
+.sl-cmp-th-team {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: #0F172A;
+}
+.sl-cmp-th-team img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.sl-cmp-tbl tbody tr {
+  border-bottom: 1px solid #F1F5F9;
+  transition: background .12s ease;
+}
+.sl-cmp-tbl tbody tr:last-child {
+  border-bottom: none;
+}
+.sl-cmp-tbl tbody tr:hover {
+  background: #F8FAFC;
+}
+.sl-cmp-tbl td {
+  padding: 10px 14px;
+  color: #334155;
+  vertical-align: middle;
+}
+.sl-cmp-tbl td.met {
+  font-weight: 600;
+  color: #0F172A;
+}
+.sl-cmp-tbl td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #64748B;
+}
+.sl-cmp-val-win {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #EEF2FF;
+  color: #4338CA;
+  font-weight: 800;
+  border: 1px solid #C7D2FE;
+}
+.sl-cmp-tbl td.cen {
+  text-align: center;
+}
+.sl-cmp-leader {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #F1F5F9;
+  color: #0F172A;
+  font-size: .78rem;
+  font-weight: 700;
+  border: 1px solid #E2E8F0;
+  white-space: nowrap;
+}
+.sl-cmp-leader img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+.sl-cmp-tie {
+  color: #94A3B8;
+  font-weight: 600;
+}
 /* Al hacer clic para escribir en cualquier selectbox, oculta el texto fantasma del equipo anterior */
 [data-testid="stMain"] [data-baseweb="select"]:focus-within div:has(> input) > div:not(:has(input)) {
   opacity: 0 !important;

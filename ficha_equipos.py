@@ -1104,6 +1104,57 @@ def _comparativa(a, b, sa, sb, titulo="Promedio"):
     return pd.DataFrame(filas)
 
 
+def _comparativa_html(a, b, sa, sb, titulo="Promedio"):
+    """Tabla HTML estilizada de promedios comparativos con resaltado de ganador y escudos."""
+    df = _comparativa(a, b, sa, sb, titulo)
+    if df.empty:
+        return ""
+    col_a, col_b = a["nombre"], b["nombre"]
+    logo_a, logo_b = a.get("logo") or "", b.get("logo") or ""
+    img_a = f'<img src="{_e(logo_a)}" alt="">' if logo_a else ""
+    img_b = f'<img src="{_e(logo_b)}" alt="">' if logo_b else ""
+
+    rows_html = []
+    for _, row in df.iterrows():
+        met = row[titulo]
+        va, vb, lid = row[col_a], row[col_b], row["Líder"]
+        sa_txt = "—" if pd.isna(va) else (f"{int(va)}" if met == "Victorias" else f"{va:.1f}")
+        sb_txt = "—" if pd.isna(vb) else (f"{int(vb)}" if met == "Victorias" else f"{vb:.1f}")
+
+        if lid == col_a:
+            ca_html = f'<span class="sl-cmp-val-win">{sa_txt}</span>'
+            cb_html = sb_txt
+            lid_html = f'<span class="sl-cmp-leader">{img_a}<span>{_e(a.get("abbr") or col_a)}</span></span>'
+        elif lid == col_b:
+            ca_html = sa_txt
+            cb_html = f'<span class="sl-cmp-val-win">{sb_txt}</span>'
+            lid_html = f'<span class="sl-cmp-leader">{img_b}<span>{_e(b.get("abbr") or col_b)}</span></span>'
+        else:
+            ca_html, cb_html = sa_txt, sb_txt
+            lid_html = '<span class="sl-cmp-tie">—</span>'
+
+        rows_html.append(
+            f'<tr>'
+            f'<td class="met">{_e(met)}</td>'
+            f'<td class="num">{ca_html}</td>'
+            f'<td class="num">{cb_html}</td>'
+            f'<td class="cen">{lid_html}</td>'
+            f'</tr>'
+        )
+
+    return (
+        '<div class="sl-cmp-wrap"><table class="sl-cmp-tbl">'
+        '<thead><tr>'
+        f'<th>{_e(titulo)}</th>'
+        f'<th class="num"><span class="sl-cmp-th-team">{img_a}<span>{_e(col_a)}</span></span></th>'
+        f'<th class="num"><span class="sl-cmp-th-team">{img_b}<span>{_e(col_b)}</span></span></th>'
+        '<th class="cen">Ventaja</th>'
+        '</tr></thead>'
+        f'<tbody>{"".join(rows_html)}</tbody>'
+        '</table></div>'
+    )
+
+
 # ---------------------------------------------------------------------------
 # Líneas con racha: busca, para el cruce A vs B, las líneas que ambos vienen cumpliendo de forma consistente
 # ---------------------------------------------------------------------------
@@ -2013,7 +2064,10 @@ def render():
 
     if idb:
         st.markdown("#### Comparativa")
-        st.dataframe(_comparativa(eq_a, por_id[idb], sa, sb, "Promedio (enfrentamientos directos)" if h2h else f"Promedio (últimos {ventana})"), hide_index=True, use_container_width=True)
+        st.markdown(
+            _comparativa_html(eq_a, por_id[idb], sa, sb, "Promedio (enfrentamientos directos)" if h2h else f"Promedio (últimos {ventana})"),
+            unsafe_allow_html=True,
+        )
     if idb:
         ra, rb = ([g["ritmo"] for g in x if g.get("ritmo") is not None] for x in (sa, sb))
         if ra and rb:
@@ -2034,4 +2088,4 @@ def render():
     st.caption("Back-to-back y estrellas ausentes se marcan en las barras (punto amarillo y rojo). Las estrellas son los 2 máximos anotadores de la ventana; "
                "si alguien llegó por traspaso a mitad de ventana, sus partidos previos cuentan como ausencia. \n\n"
                "La frecuencia es histórica (cuántas veces cumplieron la línea), no una predicción del partido. "
-               "El hándicap del Equipo B es el opuesto al del A. Verde más intenso = superó la línea por más margen.")
+               "El hándicap del equipo Visita es el opuesto al del Local. Verde más intenso = superó la línea por más margen.")
