@@ -992,22 +992,25 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
 
 /* ───────── Franja superior: PULSO EN VIVO (#15103F unificada con el sidebar) ───────── */
 [data-testid="stMain"] [data-testid="stElementContainer"]:has(.top-ticker-bar) {
-  margin-top: -2.25rem !important;
+  margin-top: .55rem !important;
 }
 .top-ticker-bar {
   background: #15103F;
-  border-radius: 0;
-  width: 100vw;
+  border-radius: 14px;
+  width: 100%;
   position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 18px 7px;
+  padding: 8px 16px 7px;
   margin-bottom: .55rem;
-  border-bottom: 1px solid rgba(167,139,250,.22);
-  box-shadow: none;
+  border: 1px solid rgba(167,139,250,.22);
+  box-shadow: 0 6px 18px -6px rgba(19,10,63,.22);
   color: #fff;
   overflow: hidden;
   z-index: 20;
+  transition: margin-left .2s ease, width .2s ease;
+}
+body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
+  margin-left: 44px;
+  width: calc(100% - 44px);
 }
 .ticker-inner {
   max-width: 1392px;
