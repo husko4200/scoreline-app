@@ -2812,10 +2812,18 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   .sl-list-liga { display: none; }
 }
 
-/* ───────── Spinner / carga ───────── */
+/* ───────── Spinner / carga y formularios delicados ───────── */
 [data-testid="stSpinnerIcon"] { display: block !important; }
 [data-testid="stSpinner"]::before,
 [data-testid="stStatusWidget"]::before { content: none !important; }
+[data-testid="InputInstructions"] { display: none !important; }
+[data-testid="stForm"] {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 14px !important;
+  padding: 18px 20px !important;
+  box-shadow: 0 4px 18px -8px rgba(15, 23, 42, .06) !important;
+}
 </style>
 """
 

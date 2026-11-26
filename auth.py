@@ -468,15 +468,29 @@ def barra_superior():
 
 
 def dialogo_autenticacion():
-    """Ventana o expander de inicio de sesión y registro."""
-    with st.expander("⚡ ScoreLine · Acceso a tu Cuenta / Suscripción PRO", expanded=True):
-        t1, t2, t3 = st.tabs(["Iniciar Sesión", "Crear Cuenta Gratis", "💎 Adquirir Plan PRO"])
+    """Ventana elegante de inicio de sesión, registro gratuito y plan Pro."""
+    with st.expander("🔐 ScoreLine · Acceso a tu Cuenta", expanded=True):
+        st.markdown(
+            '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #4F46E5;'
+            'border-radius:10px;padding:9px 14px;margin-bottom:8px;font-size:.83rem;color:#334155;">'
+            '<b style="color:#0F172A;">Bienvenido a ScoreLine</b> · '
+            'Guarda tus equipos favoritos, sigue marcadores en vivo y accede a proyecciones avanzadas.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        t1, t2, t3 = st.tabs(["👤 Iniciar sesión", "✨ Crear cuenta gratis", "💎 ScoreLine Pro"])
 
         with t1:
             with st.form("form_modal_login"):
-                email = st.text_input("Correo", placeholder="tu@correo.com", key="m_email")
-                pwd = st.text_input("Contraseña", type="password", key="m_pass")
-                if st.form_submit_button("Ingresar", type="primary", use_container_width=True):
+                st.markdown(
+                    '<div style="font-size:.82rem;color:#64748B;margin-bottom:6px;">'
+                    'Ingresa con tu correo electrónico y contraseña.'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
+                email = st.text_input("Correo electrónico", placeholder="tu@correo.com", key="m_email")
+                pwd = st.text_input("Contraseña", type="password", placeholder="••••••••", key="m_pass")
+                if st.form_submit_button("Ingresar a ScoreLine", type="primary", use_container_width=True):
                     ok, msg = iniciar_sesion(email, pwd)
                     if ok:
                         st.session_state[MODAL_KEY] = False
@@ -487,10 +501,18 @@ def dialogo_autenticacion():
 
         with t2:
             with st.form("form_modal_reg"):
-                nom = st.text_input("Nombre de usuario", placeholder="carlos_99", key="m_nom")
-                reg_mail = st.text_input("Correo electrónico", placeholder="carlos@correo.com", key="m_reg_mail")
-                reg_tel = st.text_input("Número de teléfono", placeholder="+56 9 1234 5678", key="m_reg_tel")
-                reg_pwd = st.text_input("Contraseña (mínimo 6 caracteres)", type="password", key="m_reg_pwd")
+                st.markdown(
+                    '<div style="font-size:.82rem;color:#64748B;margin-bottom:6px;">'
+                    'Crea tu cuenta gratuita en menos de un minuto.'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
+                c_u, c_e = st.columns(2)
+                nom = c_u.text_input("Nombre de usuario", placeholder="carlos_99", key="m_nom")
+                reg_mail = c_e.text_input("Correo electrónico", placeholder="carlos@correo.com", key="m_reg_mail")
+                c_t, c_p = st.columns(2)
+                reg_tel = c_t.text_input("Teléfono", placeholder="+56 9 1234 5678", key="m_reg_tel")
+                reg_pwd = c_p.text_input("Contraseña (mín. 6 caracteres)", type="password", placeholder="••••••••", key="m_reg_pwd")
                 reg_conociste = st.selectbox(
                     "¿Cómo nos conociste? (opcional)",
                     [
@@ -507,8 +529,8 @@ def dialogo_autenticacion():
                 )
                 acepta_terminos = st.checkbox("Acepto los Términos y Condiciones y la Política de Privacidad", key="m_reg_terminos")
                 mayor_18 = st.checkbox("Confirmo que soy mayor de 18 años", key="m_reg_mayor18")
-                recibir_novedades = st.checkbox("Quiero recibir emails con novedades y promociones del sitio (opcional)", key="m_reg_novedades")
-                if st.form_submit_button("Crear cuenta gratuita", use_container_width=True):
+                recibir_novedades = st.checkbox("Quiero recibir novedades y promociones (opcional)", key="m_reg_novedades")
+                if st.form_submit_button("✨ Crear cuenta gratuita", type="primary", use_container_width=True):
                     digitos_tel = "".join(c for c in reg_tel if c.isdigit())
                     if not reg_tel.strip() or len(digitos_tel) < 7:
                         st.error("Ingresa un número de teléfono válido.")
@@ -524,23 +546,27 @@ def dialogo_autenticacion():
                             recibir_novedades=recibir_novedades,
                         )
                         if ok:
-                            st.success(f"{msg} Inicia sesión en la pestaña 'Iniciar Sesión'.")
+                            st.success(f"{msg} Inicia sesión en la pestaña 'Iniciar sesión'.")
                         else:
                             st.error(msg)
 
         with t3:
             st.markdown(
                 """
-                ### 🚀 Ventajas del Plan PRO:
-                * **Sin Anuncios:** Navegación 100% limpia sin interrupciones.
-                * **Picks Predictivos Automáticos:** Modelo Poisson con cuotas de alto valor.
-                * **Simulación Monte Carlo (4.000 iteraciones):** Minutos y estadísticas simuladas de la NBA.
-                * **Lector de Boletas de Apuestas con IA:** Sube la foto de tu combinada y calcula la probabilidad real.
-                
-                👉 **¿Quieres activarlo?** Contáctanos por WhatsApp o correo para habilitar tu acceso mensual o anual al instante.
-                """
+                <div style="background:linear-gradient(180deg,#F5F7FF 0%,#FFFFFF 60%);border:1px solid #C7D2FE;border-radius:14px;padding:16px 18px;margin-bottom:10px;">
+                  <div style="font-weight:800;font-size:1.05rem;color:#1E1B4B;margin-bottom:8px;">★ Ventajas de ScoreLine Pro</div>
+                  <div style="font-size:.85rem;color:#334155;line-height:1.7;">
+                    <div><b style="color:#4F46E5;">✓</b> <b>Experiencia limpia:</b> navegación fluida sin interrupciones.</div>
+                    <div><b style="color:#4F46E5;">✓</b> <b>Picks predictivos:</b> modelo Poisson con cuotas de valor esperado (EV).</div>
+                    <div><b style="color:#4F46E5;">✓</b> <b>Simulación avanzada (4.000 iteraciones):</b> minutos y estadísticas proyectadas NBA.</div>
+                    <div><b style="color:#4F46E5;">✓</b> <b>Lector de boletas con IA:</b> analiza combinadas y probabilidad real al instante.</div>
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
-        if st.button("Cerrar ventana de acceso", key="cerrar_modal"):
+            st.caption("👉 ¿Listo para activarlo? Inicia sesión o crea tu cuenta gratis y elige el plan Pro.")
+        if st.button("Cerrar ventana", key="cerrar_modal"):
             st.session_state[MODAL_KEY] = False
             st.rerun()
 

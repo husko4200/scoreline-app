@@ -339,13 +339,26 @@ def modal_pro(motivo: str = ""):
     )
     uid = uid_actual()
     if not uid:
-        st.caption("Inicia sesión o crea tu cuenta gratuita para activar tu suscripción.")
-        t1, t2 = st.tabs(["Iniciar sesión", "Crear cuenta gratis"])
+        st.markdown(
+            '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;'
+            'margin:6px 0 4px;padding-top:8px;border-top:1px solid #E2E8F0;">'
+            '<span style="font-weight:700;font-size:.92rem;color:#0F172A;">🔐 Accede a tu cuenta</span>'
+            '<span style="font-size:.76rem;color:#64748B;">Inicia sesión o regístrate gratis para continuar</span>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        t1, t2 = st.tabs(["👤 Iniciar sesión", "✨ Crear cuenta gratis"])
         with t1:
             with st.form("form_pro_login"):
-                mail = st.text_input("Correo", placeholder="tu@correo.com")
-                pwd = st.text_input("Contraseña", type="password")
-                if st.form_submit_button("Ingresar", type="primary", use_container_width=True):
+                st.markdown(
+                    '<div style="font-size:.82rem;color:#64748B;margin-bottom:6px;">'
+                    'Bienvenido de nuevo · Ingresa con tu correo y contraseña.'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
+                mail = st.text_input("Correo electrónico", placeholder="tu@correo.com")
+                pwd = st.text_input("Contraseña", type="password", placeholder="••••••••")
+                if st.form_submit_button("Ingresar a ScoreLine", type="primary", use_container_width=True):
                     ok, msg = auth.iniciar_sesion(mail, pwd)
                     if ok:
                         st.rerun()
@@ -353,11 +366,18 @@ def modal_pro(motivo: str = ""):
                         st.error(msg)
         with t2:
             with st.form("form_pro_reg"):
-                nom = st.text_input("Nombre", placeholder="Carlos")
-                rmail = st.text_input("Correo", placeholder="tu@correo.com")
-                rpwd = st.text_input("Contraseña (mín. 6)", type="password")
-                mayor18 = st.checkbox("Declaro tener al menos 18 años")
-                if st.form_submit_button("Crear cuenta", use_container_width=True):
+                st.markdown(
+                    '<div style="font-size:.82rem;color:#64748B;margin-bottom:6px;">'
+                    'Crea tu cuenta gratuita en segundos · Sin tarjeta requerida.'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
+                c_n, c_m = st.columns(2)
+                nom = c_n.text_input("Nombre", placeholder="Carlos")
+                rmail = c_m.text_input("Correo electrónico", placeholder="tu@correo.com")
+                rpwd = st.text_input("Contraseña (mínimo 6 caracteres)", type="password", placeholder="••••••••")
+                mayor18 = st.checkbox("Confirmo que soy mayor de 18 años")
+                if st.form_submit_button("✨ Crear mi cuenta gratis", type="primary", use_container_width=True):
                     if not mayor18:
                         st.error("Debes confirmar que tienes al menos 18 años.")
                     else:
@@ -367,6 +387,12 @@ def modal_pro(motivo: str = ""):
                             st.rerun()
                         else:
                             st.error(msg)
+                st.markdown(
+                    '<div style="text-align:center;font-size:.73rem;color:#94A3B8;margin-top:6px;">'
+                    '🔒 Tus datos están protegidos · Cancela cuando quieras'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
         return
 
     c1, c2 = st.columns(2)
