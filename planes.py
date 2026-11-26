@@ -21,7 +21,7 @@ import streamlit as st
 
 import auth
 
-OFERTA_ENTRADA = "Oferta de entrada: primera semana por $1.990 CLP (o 1 USD) · cancela cuando quieras."
+OFERTA_ENTRADA = "Oferta de bienvenida: primera semana por $1.990 CLP (o $1 USD) · Cancela en 1 clic cuando quieras."
 PRECIO_MENSUAL_CLP = 9990
 PRECIO_MENSUAL_USD = 9.99
 
@@ -251,46 +251,92 @@ def iniciar_pago(uid: str | None) -> str:
 # ---------------------------------------------------------------------------
 # Modales y componentes reutilizables (seguridad en servidor)
 # ---------------------------------------------------------------------------
-@st.dialog("Planes ScoreLine · Suscripción Mensual", width="small")
+@st.dialog("Elige tu plan ScoreLine", width="large")
 def modal_pro(motivo: str = ""):
-    """Modal con comparativa de planes mensuales, cupón de descuento y acceso Pro."""
-    if motivo:
-        st.caption(motivo)
-
-    c_free, c_pro = st.columns(2)
-    with c_free:
-        st.markdown(
-            """
-            **Plan Gratuito · $0/mes**
-            - Marcadores en vivo y calendario
-            - Planteles completos y lesionados
-            - Posiciones Este / Oeste
-            - Top Expected (aciertos pasados)
-            - 1 jugador por vez (PTS, 5 PJ)
-            """
-        )
-    with c_pro:
-        st.markdown(
-            f"""
-            **★ ScoreLine Pro · ${PRECIO_MENSUAL_CLP:,} CLP/mes**
-            - Comparador completo + autoanálisis (5/10/15/20 PJ)
-            - Simulación stats vs rival reciente
-            - Cuota rentable (EV/ROI) + Análisis IA
-            - Top Expected próximos + Alertas favoritos
-            - Boletas IA + todas las métricas
-            """.replace(",", ".")
-        )
+    """Modal profesional con comparativa de planes, cupón de descuento y acceso Pro."""
+    sub_txt = motivo or "Proyecciones avanzadas, cuotas con valor esperado (EV) y verificación ilimitada en un solo lugar."
+    st.markdown(
+        f'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #4F46E5;'
+        f'border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.86rem;color:#334155;">'
+        f'<b style="color:#0F172A;">Análisis deportivo de nivel profesional</b> · {_esc(sub_txt)}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     cupon_in = st.text_input("¿Tienes un cupón de descuento?", placeholder="Ej. SCORELINE20", key="pro_cupon_in")
     ok_cup, pct_cup, msg_cup = validar_cupon(cupon_in)
+    precio_txt = f"${PRECIO_MENSUAL_CLP:,}".replace(",", ".")
+    precio_html = f'<span style="font-size:1.55rem;font-weight:800;color:#0F172A;">{precio_txt}</span> <span style="font-size:.82rem;color:#64748B;">CLP / mes</span>'
     if cupon_in.strip():
         if ok_cup:
             precio_final = round(PRECIO_MENSUAL_CLP * (100 - pct_cup) / 100)
-            st.success(f"{msg_cup} Primer mes: **${precio_final:,} CLP**.".replace(",", "."))
+            pf_txt = f"${precio_final:,}".replace(",", ".")
+            precio_html = (
+                f'<span style="font-size:.95rem;color:#94A3B8;text-decoration:line-through;margin-right:6px;">{precio_txt}</span>'
+                f'<span style="font-size:1.55rem;font-weight:800;color:#047857;">{pf_txt}</span> '
+                f'<span style="font-size:.82rem;color:#047857;font-weight:700;">CLP 1.er mes (-{pct_cup}%)</span>'
+            )
+            st.success(f"{msg_cup} Primer mes: **{pf_txt} CLP**.")
         else:
             st.warning(msg_cup)
 
-    st.info(OFERTA_ENTRADA)
+    st.markdown(
+        f"""
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:8px 0 14px;">
+          <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-weight:800;font-size:1.02rem;color:#0F172A;">Plan Esencial</span>
+                <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;">GRATIS</span>
+              </div>
+              <div style="margin-bottom:12px;">
+                <span style="font-size:1.55rem;font-weight:800;color:#0F172A;">$0</span>
+                <span style="font-size:.82rem;color:#64748B;">CLP / mes</span>
+              </div>
+              <div style="font-size:.82rem;color:#334155;line-height:1.65;">
+                <div>✓ Marcadores en vivo y agenda diaria</div>
+                <div>✓ Planteles completos y reporte de lesiones</div>
+                <div>✓ Posiciones y rachas básicas de equipos</div>
+                <div>✓ Top Expected pasados + 1 partido gratis</div>
+                <div>✓ Ficha individual (últimos 5 partidos)</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #E2E8F0;font-size:.74rem;color:#64748B;">
+              Ideal para seguir marcadores y resultados del día.
+            </div>
+          </div>
+
+          <div style="background:linear-gradient(180deg,#F5F7FF 0%,#FFFFFF 45%);border:2px solid #4F46E5;border-radius:16px;padding:16px 18px;box-shadow:0 10px 26px -10px rgba(79,70,229,.22);display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-weight:800;font-size:1.02rem;color:#1E1B4B;">★ ScoreLine Pro</span>
+                <span style="font-size:.68rem;font-weight:800;padding:2px 9px;border-radius:999px;background:#4F46E5;color:#FFFFFF;letter-spacing:.03em;">RECOMENDADO</span>
+              </div>
+              <div style="margin-bottom:12px;">{precio_html}</div>
+              <div style="font-size:.82rem;color:#1E293B;line-height:1.65;">
+                <div><b style="color:#4F46E5;">★</b> <b>Comparador total</b> y autoanálisis (5 a 20 PJ)</div>
+                <div><b style="color:#4F46E5;">★</b> <b>Simulación estadística</b> frente al rival reciente</div>
+                <div><b style="color:#4F46E5;">★</b> <b>Cuotas con valor real (EV/ROI)</b> + análisis IA</div>
+                <div><b style="color:#4F46E5;">★</b> <b>Top Expected próximos</b> y alertas de favoritos</div>
+                <div><b style="color:#4F46E5;">★</b> <b>Verificación ilimitada</b>, boletas IA y métricas</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #C7D2FE;font-size:.74rem;color:#4338CA;font-weight:600;">
+              Acceso inmediato a toda la plataforma sin límites.
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f'<div style="background:linear-gradient(90deg,#FFFBEB,#EEF2FF);border:1px solid #FDE68A;'
+        f'border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:.82rem;color:#1E293B;text-align:center;">'
+        f'⚡ <b>{_esc(OFERTA_ENTRADA)}</b>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
     uid = uid_actual()
     if not uid:
         st.caption("Inicia sesión o crea tu cuenta gratuita para activar tu suscripción.")
