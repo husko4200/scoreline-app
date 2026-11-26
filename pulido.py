@@ -1214,6 +1214,161 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   color: #94A3B8;
   font-weight: 600;
 }
+/* ───────── ScoreLine AI (botón trigger oculto + chat + cristal límite) ───────── */
+.st-key-sl_ai_open_btn,
+[class*="st-key-sl_ai_open_btn"] {
+  position: fixed !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.sl-ai-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%);
+  color: #FFFFFF;
+}
+.sl-ai-head-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #5EEAD4;
+  flex-shrink: 0;
+}
+.sl-ai-head-info { flex: 1; min-width: 0; }
+.sl-ai-title { font-size: 1.05rem; font-weight: 800; color: #FFFFFF; line-height: 1.2; }
+.sl-ai-sub { font-size: .78rem; color: rgba(255, 255, 255, .75); margin-top: 2px; }
+.sl-ai-badge {
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.sl-ai-badge.is-pro { background: rgba(94, 234, 212, .18); color: #5EEAD4; border: 1px solid rgba(94, 234, 212, .4); }
+.sl-ai-badge.is-free { background: rgba(255, 255, 255, .14); color: #E0E7FF; border: 1px solid rgba(255, 255, 255, .25); }
+.sl-ai-badge.is-empty { background: rgba(251, 191, 36, .18); color: #FDE68A; border: 1px solid rgba(251, 191, 36, .4); }
+.sl-ai-msgs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding: 8px 4px;
+  margin-bottom: 10px;
+}
+.sl-ai-row { display: flex; align-items: flex-end; gap: 8px; }
+.sl-ai-row.user { justify-content: flex-end; }
+.sl-ai-msg-av {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #C7D2FE;
+}
+.sl-ai-bubble {
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: .88rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.sl-ai-bubble.user {
+  background: #4F46E5;
+  color: #FFFFFF;
+  border-bottom-right-radius: 4px;
+}
+.sl-ai-bubble.bot {
+  background: #F8FAFC;
+  color: #0F172A;
+  border: 1px solid #E2E8F0;
+  border-bottom-left-radius: 4px;
+}
+.sl-ai-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 18px 14px 14px;
+  gap: 10px;
+}
+.sl-ai-welcome-img {
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(79, 70, 229, .2));
+}
+.sl-ai-welcome-txt {
+  max-width: 440px;
+  color: #475569;
+  font-size: .88rem;
+  line-height: 1.45;
+}
+@keyframes sl-ai-glass-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+.sl-ai-blur-stage {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+  min-height: 240px;
+  margin-bottom: 12px;
+}
+.sl-ai-blurred-bg {
+  filter: blur(7px);
+  opacity: .42;
+  pointer-events: none;
+  user-select: none;
+  padding: 12px;
+}
+.sl-ai-glass-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, .68);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: sl-ai-glass-in .35s cubic-bezier(.2, .8, .2, 1) both;
+}
+.sl-ai-glass-bot {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 6px 14px rgba(79, 70, 229, .24));
+}
+.sl-ai-glass-title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+.sl-ai-glass-sub {
+  font-size: .84rem;
+  color: #475569;
+  max-width: 360px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
 /* Al hacer clic para escribir en cualquier selectbox, oculta el texto fantasma del equipo anterior */
 [data-testid="stMain"] [data-baseweb="select"]:focus-within div:has(> input) > div:not(:has(input)) {
   opacity: 0 !important;

@@ -105,17 +105,20 @@ div[role="radiogroup"] label:has(input:checked) { animation: pl-pop .32s cubic-b
 .hoy-marc.ef-flash { border-radius: 12px; }
 
 /* ============ Panel flotante, avisos y confeti ============ */
-.pl-dock { position: fixed; right: 16px; bottom: 18px; z-index: 1000002; display: flex; gap: 6px; padding: 5px; border-radius: 14px;
-  background: rgba(255, 255, 255, .86); backdrop-filter: blur(10px); border: 1px solid var(--pl-linea, #E2E8F0); box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .35);
+.pl-dock { position: fixed; right: 16px; bottom: 18px; z-index: 1000002; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px; border-radius: 16px;
+  background: rgba(255, 255, 255, .90); backdrop-filter: blur(10px); border: 1px solid var(--pl-linea, #E2E8F0); box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .35);
   animation: pl-in-lado .6s cubic-bezier(.2, .7, .2, 1) 1s both; }
-.pl-dock button { all: unset; box-sizing: border-box; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; cursor: pointer; font-size: 1rem;
-  transition: background .15s ease, transform .15s ease, opacity .2s ease; }
-.pl-dock button:hover { background: #EEF0FF; transform: translateY(-2px); }
-.pl-dock button:active { transform: scale(.9); }
+.pl-dock button { all: unset; box-sizing: border-box; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; cursor: pointer; font-size: 1rem; color: #334155;
+  transition: background .15s ease, transform .15s ease, opacity .2s ease, box-shadow .15s ease; }
+.pl-dock button:hover { background: #EEF0FF; transform: translateY(-2px); color: #4F46E5; }
+.pl-dock button:active { transform: scale(.92); }
 .pl-dock button:focus-visible { outline: 2px solid var(--pl-acc, #4F46E5); outline-offset: 1px; }
 .pl-dock button.off { opacity: .45; filter: grayscale(1); }
-.pl-dock button.sube { width: 0; opacity: 0; pointer-events: none; overflow: hidden; margin-left: -6px; }
-.pl-dock button.sube.ver { width: 34px; opacity: 1; pointer-events: auto; margin-left: 0; }
+.pl-dock button.sl-ai-btn { width: 42px; height: 42px; border-radius: 50%; padding: 0; background: linear-gradient(135deg, #2E1F7A, #4F46E5); box-shadow: 0 4px 14px -2px rgba(79, 70, 229, .55), 0 0 0 2px rgba(94, 234, 212, .55); overflow: hidden; }
+.pl-dock button.sl-ai-btn:hover { background: linear-gradient(135deg, #3730A3, #6366F1); transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 20px -2px rgba(79, 70, 229, .65), 0 0 0 2.5px #5EEAD4; }
+.pl-dock button.sl-ai-btn img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.pl-dock button.sube { height: 0; width: 38px; opacity: 0; pointer-events: none; overflow: hidden; margin-top: -6px; }
+.pl-dock button.sube.ver { height: 36px; opacity: 1; pointer-events: auto; margin-top: 0; }
 #pl-toasts { position: fixed; left: 18px; bottom: 18px; z-index: 1000002; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .pl-toast { display: flex; align-items: center; gap: .6rem; padding: .7rem 1rem; border-radius: 14px; color: #fff; font-weight: 600; font-size: .9rem; max-width: min(86vw, 380px);
   background: linear-gradient(135deg, #0F172A, #1E1B4B); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 16px 36px -12px rgba(15, 23, 42, .6);
@@ -240,7 +243,7 @@ html:has([role="dialog"]) .pl-dock { opacity: 0; pointer-events: none; transitio
 _JS = r"""
 <script>
 (function () {
-  const P = window.parent, D = P && P.document, V = 7;
+  const P = window.parent, D = P && P.document, V = 8;
   if (!P || !D) return;
   if (P.__pl && P.__pl.v === V) return;                         // ya instalado: no se duplica en cada ejecución de Streamlit
   if (P.__pl && P.__pl.destroy) { try { P.__pl.destroy(); } catch (e) {} }
@@ -347,24 +350,33 @@ _JS = r"""
   const carga = mk('div'); carga.id = 'pl-load'; carga.setAttribute('aria-hidden', 'true'); D.body.appendChild(carga);
   const prog = mk('div'); prog.id = 'pl-scroll'; prog.setAttribute('aria-hidden', 'true'); const barra = mk('i'); prog.appendChild(barra); D.body.appendChild(prog);
 
-  const dock = mk('div', 'pl-dock'); dock.setAttribute('role', 'toolbar'); dock.setAttribute('aria-label', 'Sonido y efectos');
-  const bSnd = mk('button'), bFx = mk('button'), bUp = mk('button', 'sube');
-  [bSnd, bFx, bUp].forEach(b => b.type = 'button');
+  const dock = mk('div', 'pl-dock'); dock.setAttribute('role', 'toolbar'); dock.setAttribute('aria-label', 'Asistente y sonido');
+  const bAi = mk('button', 'sl-ai-btn'), bSnd = mk('button'), bUp = mk('button', 'sube');
+  [bAi, bSnd, bUp].forEach(b => b.type = 'button');
+  bAi.title = 'ScoreLine AI · Analista deportivo'; bAi.setAttribute('aria-label', 'Abrir ScoreLine AI');
+  const avSrc = '__ROBOT_AVATAR_URI__';
+  if (avSrc) {
+    const imgAi = D.createElement('img');
+    imgAi.src = avSrc; imgAi.alt = 'ScoreLine AI';
+    bAi.appendChild(imgAi);
+  } else {
+    bAi.textContent = 'AI';
+  }
+  bAi.onclick = () => {
+    sonar('click');
+    const trig = D.querySelector('[class*="st-key-sl_ai_open_btn"] button');
+    if (trig) trig.click();
+  };
   const icoSndOn  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9.5 9.5 0 0 1 0 14"/></svg>';
   const icoSndOff = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
-  const icoFxOn   = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.2L19 10l-5.1 1.8L12 17l-1.9-5.2L5 10l5.1-1.8z"/><path d="M19 3v4M17 5h4"/></svg>';
-  const icoFxOff  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
   bUp.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
   bUp.title = 'Volver arriba'; bUp.setAttribute('aria-label', 'Volver arriba');
   function pintarDock() {
     bSnd.innerHTML = est.snd ? icoSndOn : icoSndOff; bSnd.classList.toggle('off', !est.snd);
     bSnd.title = est.snd ? 'Sonido activado (clic para silenciar)' : 'Sonido silenciado (clic para activar)'; bSnd.setAttribute('aria-label', bSnd.title);
-    bFx.innerHTML = est.fx ? icoFxOn : icoFxOff; bFx.classList.toggle('off', !est.fx);
-    bFx.title = est.fx ? 'Efectos completos (clic para modo ligero)' : 'Modo ligero (clic para efectos completos)'; bFx.setAttribute('aria-label', bFx.title);
   }
   bSnd.onclick = () => { est.snd = !est.snd; store.set('pl_snd', est.snd ? '1' : '0'); pintarDock(); if (est.snd) sonar('on'); };
-  bFx.onclick = () => { est.fx = !est.fx; store.set('pl_fx', est.fx ? '1' : '0'); aplicarFx(); soltar(); pintarDock(); sonar(est.fx ? 'on' : 'off'); };
-  dock.append(bSnd, bFx, bUp); D.body.appendChild(dock); pintarDock();
+  dock.append(bAi, bSnd, bUp); D.body.appendChild(dock); pintarDock();
 
   let scroller = null, rafS = 0;
   const ES_SCROLL = '[data-testid="stMain"], section.main, [data-testid="stAppViewContainer"]';
@@ -581,7 +593,19 @@ _JS = r"""
 """
 
 
+@st.cache_data(show_spinner=False)
+def _robot_avatar_uri() -> str:
+    import base64
+    import os
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "robot_avatar.png")
+    try:
+        with open(ruta, "rb") as f:
+            return "data:image/png;base64," + base64.b64encode(f.read()).decode("ascii")
+    except OSError:
+        return ""
+
+
 def aplicar(seccion=None, indice: int = 0):
     """Inyecta el CSS (en cada ejecución) y el script (una sola vez; el propio script evita duplicarse)."""
     st.markdown(_CSS.replace("__IDX__", str(int(indice))), unsafe_allow_html=True)
-    components.html(_JS, height=0)
+    components.html(_JS.replace("__ROBOT_AVATAR_URI__", _robot_avatar_uri()), height=0)

@@ -32,6 +32,7 @@ import streamlit.components.v1 as _comp  # noqa: E402
 
 import alertas  # noqa: E402
 import auth  # noqa: E402
+import chatbot_ai  # noqa: E402
 import importlib
 importlib.reload(auth)  # asegura que los cambios en auth.py se reflejen de inmediato
 import diagnostico  # noqa: E402
@@ -473,6 +474,10 @@ if _modal_abierto or seccion != INICIO:
 _motivo_pro = st.session_state.pop("_abrir_modal_pro", None)
 if _motivo_pro:
     planes.modal_pro(_motivo_pro)
+
+# Botón oculto que dispara el diálogo de ScoreLine AI desde el dock flotante
+if st.button("ScoreLine AI", key="sl_ai_open_btn") and not _motivo_pro:
+    chatbot_ai.modal_chat(seccion)
 
 # Si es administrador, mostrar panel de gestión de clientes al inicio
 if auth.es_admin():
