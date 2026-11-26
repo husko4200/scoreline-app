@@ -333,6 +333,12 @@ html, body {
 }
 
 /* Logo ScoreLine integrado sin borde, sombra ni esquinas redondeadas */
+@keyframes sl-logo-gleam {
+  0%   { left: -80%; opacity: 0; }
+  10%  { opacity: 1; }
+  60%  { opacity: 1; }
+  100% { left: 150%; opacity: 0; }
+}
 .sl-brand-wrap {
   margin: 0 0 .7rem;
   padding-bottom: .7rem;
@@ -347,15 +353,47 @@ html, body {
   justify-content: flex-start;
   box-shadow: none !important;
   border: none !important;
+  position: relative;
+  overflow: hidden;
+}
+/* Reflejo / gleam que pasa por encima del logo */
+.sl-brand-card::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: -80%;
+  width: 48%;
+  height: 120%;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255,255,255,0.0) 30%,
+    rgba(255,255,255,0.55) 50%,
+    rgba(255,255,255,0.0) 70%,
+    transparent 80%
+  );
+  transform: skewX(-18deg);
+  animation: sl-logo-gleam 3.8s ease-in-out infinite;
+  animation-delay: 1.2s;
+  pointer-events: none;
+  z-index: 10;
 }
 .sl-brand-img {
   width: 100%;
-  max-width: 198px;
+  max-width: 240px;
   height: auto;
   display: block;
   border: none !important;
   border-radius: 0 !important;
-  box-shadow: none !important;
+  box-shadow:
+    0 0 24px rgba(167,139,250,.28),
+    0 0 48px rgba(79,70,229,.18);
+  filter: drop-shadow(0 2px 10px rgba(167,139,250,.35));
+  transition: filter .3s ease, transform .3s ease;
+}
+.sl-brand-img:hover {
+  filter: drop-shadow(0 4px 18px rgba(167,139,250,.65));
+  transform: scale(1.03);
 }
 .sl-brand-fallback {
   font-family: 'Roboto', sans-serif;
