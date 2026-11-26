@@ -561,6 +561,13 @@ svg.sl-icon {
   display: inline-block !important;
   vertical-align: middle !important;
 }
+.sl-ico-inline {
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  margin: 0 4px 0 0 !important;
+  line-height: 1 !important;
+}
 [data-testid="stSidebar"] .stButton > button:hover {
   background: rgba(255,255,255,.08) !important;
   color: #FFFFFF !important;
@@ -3143,18 +3150,18 @@ def ticker_superior(partidos=None):
 
     if not items:
         chips_html = (
-            '<div class="ticker-chip"><span class="ticker-sport">🏀</span>'
+            '<div class="ticker-chip"><span class="ticker-sport" data-icon="nba" data-size="14"></span>'
             '<span class="ticker-teams">NBA</span><span class="ticker-time">Hoy</span></div>'
-            '<div class="ticker-chip"><span class="ticker-sport">⚽</span>'
+            '<div class="ticker-chip"><span class="ticker-sport" data-icon="futbol" data-size="14"></span>'
             '<span class="ticker-teams">Fútbol</span><span class="ticker-time">Ligas activas</span></div>'
-            '<div class="ticker-chip"><span class="ticker-sport">🎾</span>'
+            '<div class="ticker-chip"><span class="ticker-sport" data-icon="tenis" data-size="14"></span>'
             '<span class="ticker-teams">Tenis</span><span class="ticker-time">ATP / WTA</span></div>'
         )
         resumen = "Actualizado hoy"
     else:
         chips = []
         for m in items:
-            icono = "🏀" if "NBA" in str(m.get("deporte", "")) else "⚽"
+            icono = "nba" if "NBA" in str(m.get("deporte", "")) else "futbol"
             h_ab = (m["home"].get("abrev") or m["home"]["nombre"][:3]).upper()
             a_ab = (m["away"].get("abrev") or m["away"]["nombre"][:3]).upper()
             estado = m.get("state", "pre")
@@ -3174,7 +3181,7 @@ def ticker_superior(partidos=None):
             tag_close = '</a>' if mid else '</div>'
             chips.append(
                 f'{tag_open}'
-                f'<span class="ticker-sport">{icono}</span>'
+                f'<span class="ticker-sport" data-icon="{icono}" data-size="14"></span>'
                 f'<span class="ticker-teams">{_esc(h_ab)} vs {_esc(a_ab)}</span>'
                 f'{marc}{hora_html}'
                 f'{tag_close}'
@@ -3197,10 +3204,10 @@ def ticker_superior(partidos=None):
 def barra_inferior_movil(seccion_actual: str):
     """Barra inferior fija en móvil (<768px) con 4 accesos rápidos y objetivos táctiles >=44px."""
     items = [
-        ("inicio", "🏠", "Inicio"),
-        ("vivo", "🔴", "En vivo"),
-        ("nba", "🏀", "NBA"),
-        ("futbol", "⚽", "Fútbol"),
+        ("inicio", "inicio", "Inicio"),
+        ("vivo", "en-vivo", "En vivo"),
+        ("nba", "nba", "NBA"),
+        ("futbol", "futbol", "Fútbol"),
     ]
     links = []
     for clave, ico, nom in items:
@@ -3213,7 +3220,7 @@ def barra_inferior_movil(seccion_actual: str):
         cls = "sl-mnav-item active" if activo else "sl-mnav-item"
         links.append(
             f'<a class="{cls}" href="?sec={clave}" target="_self" aria-label="Ir a {nom}">'
-            f'<span aria-hidden="true">{ico}</span><span>{nom}</span></a>'
+            f'<span aria-hidden="true" data-icon="{ico}" data-size="18"></span><span>{nom}</span></a>'
         )
     st.markdown(
         f'<nav class="sl-mobile-nav" role="navigation" aria-label="Navegación móvil">{"".join(links)}</nav>',

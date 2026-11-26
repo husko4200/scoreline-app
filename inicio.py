@@ -1698,7 +1698,7 @@ def pagina_inicio():
     )
     busqueda = c_bus.text_input(
         "Buscar",
-        placeholder="🔍 Buscar equipo, liga o jugador...",
+        placeholder="Buscar equipo, liga o jugador...",
         label_visibility="collapsed",
         key="inicio_busqueda",
     )

@@ -348,13 +348,18 @@ _JS = r"""
   const prog = mk('div'); prog.id = 'pl-scroll'; prog.setAttribute('aria-hidden', 'true'); const barra = mk('i'); prog.appendChild(barra); D.body.appendChild(prog);
 
   const dock = mk('div', 'pl-dock'); dock.setAttribute('role', 'toolbar'); dock.setAttribute('aria-label', 'Sonido y efectos');
-  const bSnd = mk('button'), bFx = mk('button'), bUp = mk('button', 'sube', '⬆️');
+  const bSnd = mk('button'), bFx = mk('button'), bUp = mk('button', 'sube');
   [bSnd, bFx, bUp].forEach(b => b.type = 'button');
+  const icoSndOn  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9.5 9.5 0 0 1 0 14"/></svg>';
+  const icoSndOff = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+  const icoFxOn   = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.2L19 10l-5.1 1.8L12 17l-1.9-5.2L5 10l5.1-1.8z"/><path d="M19 3v4M17 5h4"/></svg>';
+  const icoFxOff  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+  bUp.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
   bUp.title = 'Volver arriba'; bUp.setAttribute('aria-label', 'Volver arriba');
   function pintarDock() {
-    bSnd.textContent = est.snd ? '🔊' : '🔇'; bSnd.classList.toggle('off', !est.snd);
+    bSnd.innerHTML = est.snd ? icoSndOn : icoSndOff; bSnd.classList.toggle('off', !est.snd);
     bSnd.title = est.snd ? 'Sonido activado (clic para silenciar)' : 'Sonido silenciado (clic para activar)'; bSnd.setAttribute('aria-label', bSnd.title);
-    bFx.textContent = est.fx ? '✨' : '⚡'; bFx.classList.toggle('off', !est.fx);
+    bFx.innerHTML = est.fx ? icoFxOn : icoFxOff; bFx.classList.toggle('off', !est.fx);
     bFx.title = est.fx ? 'Efectos completos (clic para modo ligero)' : 'Modo ligero (clic para efectos completos)'; bFx.setAttribute('aria-label', bFx.title);
   }
   bSnd.onclick = () => { est.snd = !est.snd; store.set('pl_snd', est.snd ? '1' : '0'); pintarDock(); if (est.snd) sonar('on'); };

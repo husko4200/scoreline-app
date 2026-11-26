@@ -314,7 +314,14 @@ _comp.html(
       "pro": '<polygon points="12.00,3.20 14.35,9.36 20.94,9.70 15.80,13.84 17.53,20.20 12.00,16.60 6.47,20.20 8.20,13.84 3.06,9.70 9.65,9.36" fill="currentColor"/>',
       "seguimiento": '<polyline points="2.5,12 7,12 10,5 14,19 17,12 21.5,12"/>',
       "tenis": '<circle cx="12" cy="12" r="9"/><path d="M4.3 6.9C9.2 8.8 9.2 15.2 4.3 17.1M19.7 6.9C14.8 8.8 14.8 15.2 19.7 17.1"/>',
-      "top-expected": '<circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="4"/><circle cx="11" cy="13" r="1" fill="currentColor"/><path d="M11 13L20.5 3.5M16.5 3.5h4v4"/>'
+      "top-expected": '<circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="4"/><circle cx="11" cy="13" r="1" fill="currentColor"/><path d="M11 13L20.5 3.5M16.5 3.5h4v4"/>',
+      "rachas": '<path d="M12 2.8c2.6 3.1 5 5.6 5 9.2a5 5 0 1 1-10 0c0-1.9.8-3.6 2-5 .3 1.4 1.3 2.3 2.5 2.3-1-1.9-.7-4.3.5-6.5z"/>',
+      "partidos": '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.5h6V4M8.5 10h7M8.5 14h7M8.5 18h4"/>',
+      "candado": '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+      "stats": '<path d="M4 20h16"/><rect x="6" y="12" width="3" height="5" rx="0.5"/><rect x="10.5" y="7" width="3" height="10" rx="0.5"/><rect x="15" y="4" width="3" height="13" rx="0.5"/>',
+      "estrella-on": '<polygon points="12.00,3.20 14.35,9.36 20.94,9.70 15.80,13.84 17.53,20.20 12.00,16.60 6.47,20.20 8.20,13.84 3.06,9.70 9.65,9.36" fill="currentColor"/>',
+      "estrella-off": '<polygon points="12.00,3.20 14.35,9.36 20.94,9.70 15.80,13.84 17.53,20.20 12.00,16.60 6.47,20.20 8.20,13.84 3.06,9.70 9.65,9.36"/>',
+      "vs": '<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/><path d="M14.5 6.5L18 3h3v3l-3.5 3.5M5 14l4 4M7 17l-3 3M3 19l2 2"/>'
     };
     function svg(name, size) {
       size = size || 18;
@@ -334,6 +341,27 @@ _comp.html(
       "Alertas de favoritos": "alertas",
       "Notificaciones (Pro)": "alertas"
     };
+
+    var emojiMap = {
+      "🏠": "inicio",
+      "📡": "en-vivo",
+      "🎯": "top-expected",
+      "🏀": "nba",
+      "⚽": "futbol",
+      "🎾": "tenis",
+      "🔔": "alertas",
+      "🔥": "rachas",
+      "📋": "partidos",
+      "🔒": "candado",
+      "📊": "stats",
+      "⚔️": "vs",
+      "🛡️": "datos",
+      "⭐": "estrella-on",
+      "☆": "estrella-off",
+      "★": "pro",
+      "✨": "pro"
+    };
+    var emojiRe = /(🏠|📡|🎯|🏀|⚽|🎾|🔔|🔥|📋|🔒|📊|⚔️|🛡️|⭐|☆|★|✨)/g;
 
     function mountAll() {
       var doc = P.document;
@@ -356,6 +384,45 @@ _comp.html(
         if (cur && cur.getAttribute('data-sl-icon') === iconName) return;
         if (cur) cur.remove();
         p.insertAdjacentHTML('afterbegin', svg(iconName, 18));
+      });
+      /* Reemplazo limpio de emojis comunes en botones, radios, tarjetas y títulos */
+      var scopes = doc.querySelectorAll(
+        '[data-testid="stMain"] button p, [data-testid="stMain"] [role="radiogroup"] label p, ' +
+        '[data-testid="stMain"] h1, [data-testid="stMain"] h2, [data-testid="stMain"] h3, ' +
+        '.sl-lock-panel, .sl-free-banner'
+      );
+      scopes.forEach(function(el) {
+        if (el.dataset.slEmojiDone === '1' && !emojiRe.test(el.textContent || '')) return;
+        var walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+        var nodes = [];
+        var n;
+        while ((n = walker.nextNode())) {
+          if (n.nodeValue && emojiRe.test(n.nodeValue)) nodes.push(n);
+          emojiRe.lastIndex = 0;
+        }
+        nodes.forEach(function(tn) {
+          var val = tn.nodeValue;
+          var frag = doc.createDocumentFragment();
+          var last = 0;
+          val.replace(emojiRe, function(m, _g, off) {
+            if (off > last) frag.appendChild(doc.createTextNode(val.slice(last, off)));
+            var wrap = doc.createElement('span');
+            wrap.className = 'sl-ico-inline';
+            var icoKey = emojiMap[m];
+            var sz = (m === '⭐' || m === '☆') ? 16 : 15;
+            wrap.innerHTML = svg(icoKey, sz);
+            if (m === '⭐') wrap.style.color = '#F59E0B';
+            else if (m === '☆') wrap.style.color = '#64748B';
+            else if (m === '🔒') wrap.style.color = '#6366F1';
+            else if (m === '🔥') wrap.style.color = '#F97316';
+            frag.appendChild(wrap);
+            last = off + m.length;
+            return m;
+          });
+          if (last < val.length) frag.appendChild(doc.createTextNode(val.slice(last)));
+          if (tn.parentNode) tn.parentNode.replaceChild(frag, tn);
+        });
+        el.dataset.slEmojiDone = '1';
       });
     }
 
