@@ -2,7 +2,9 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 from html import escape as _esc
+import json
 import textwrap
+import unicodedata
 try:
     from zoneinfo import ZoneInfo
     _TZ_CHILE = ZoneInfo("America/Santiago")
@@ -248,7 +250,13 @@ def _tendencia_serie(serie):
     return "flat", "=", "Estable"
 
 
-def _jugadores_destacados_lista():
+def _sin_tildes(txt):
+    """Normaliza texto en minúsculas sin tildes para búsquedas rápidas."""
+    s = unicodedata.normalize("NFD", str(txt or ""))
+    return "".join(c for c in s if unicodedata.category(c) != "Mn").lower()
+
+
+def _jugadores_destacados_lista(filtro_texto=""):
     """Construye hasta 6 tarjetas de jugadores reales con su forma reciente (sin datos inventados)."""
     candidatos = []
     vistos = set()
@@ -261,13 +269,19 @@ def _jugadores_destacados_lista():
     except Exception:  # noqa: BLE001
         fav_ids = []
 
+    q = _sin_tildes(filtro_texto).strip()
+
     for pid in fav_ids:
         spid = str(pid)
         if spid in vistos:
             continue
-        vistos.add(spid)
         j = info.get(spid) or {}
-        candidatos.append((spid, j.get("nombre") or f"Jugador #{spid}", j.get("equipo") or "NBA", True))
+        nom = j.get("nombre") or f"Jugador #{spid}"
+        eq = j.get("equipo") or "NBA"
+        if q and q not in _sin_tildes(f"{nom} {eq}"):
+            continue
+        vistos.add(spid)
+        candidatos.append((spid, nom, eq, True))
         if len(candidatos) >= 6:
             break
 
@@ -275,10 +289,24 @@ def _jugadores_destacados_lista():
         for pid, nombre, eq in _ESTRELLAS_RESPALDO:
             if pid in vistos:
                 continue
+            if q and q not in _sin_tildes(f"{nombre} {eq}"):
+                continue
             vistos.add(pid)
             candidatos.append((pid, nombre, eq, False))
             if len(candidatos) >= 6:
                 break
+
+    if q and len(candidatos) < 6 and info:
+        for spid, j in info.items():
+            if spid in vistos:
+                continue
+            nom = j.get("nombre") or ""
+            eq = j.get("equipo") or "NBA"
+            if q in _sin_tildes(f"{nom} {eq}"):
+                vistos.add(spid)
+                candidatos.append((spid, nom, eq, False))
+                if len(candidatos) >= 6:
+                    break
 
     formas = fd._paralelo([lambda p=c[0]: fd.forma_jugador_segura(p) for c in candidatos])
     return [(*c, f) for c, f in zip(candidatos, formas)]
@@ -286,10 +314,7 @@ def _jugadores_destacados_lista():
 
 def _render_jugadores_destacados(filtro_texto=""):
     """Carrusel horizontal scroll-snap con foto, equipo, promedio real, línea, sparkline y tendencia ↑/↓/=."""
-    jugadores = _jugadores_destacados_lista()
-    q = (filtro_texto or "").strip().lower()
-    if q:
-        jugadores = [j for j in jugadores if q in j[1].lower() or q in j[2].lower()]
+    jugadores = _jugadores_destacados_lista(filtro_texto)
 
     c_head, c_btn = st.columns([4.5, 1.3], vertical_alignment="center")
     c_head.markdown(
@@ -981,16 +1006,423 @@ def _bloque_jornada(busqueda=""):
     return partidos
 
 
+def _catalogo_busqueda(partidos):
+    """Construye catálogo deduplicado de equipos, ligas y jugadores con imágenes para autocompletar."""
+    items = []
+    vistos_eq = set()
+
+    # 1. Equipos de partidos de hoy (priorizando los en vivo)
+    for m in partidos or []:
+        es_vivo = m.get("state") == "in"
+        liga = m.get("liga") or ""
+        hora = "En vivo" if es_vivo else (m.get("hora") or "Hoy")
+        for lado in ("home", "away"):
+            eq = m.get(lado) or {}
+            nom = (eq.get("nombre") or "").strip()
+            if not nom:
+                continue
+            clave = _sin_tildes(nom)
+            if clave in vistos_eq:
+                continue
+            vistos_eq.add(clave)
+            ab = eq.get("abrev") or ""
+            img = eq.get("logo") or (fd.escudo(ab) if m.get("deporte") == NBA else "")
+            items.append({
+                "n": nom,
+                "s": f"{liga} · {hora}".strip(" ·"),
+                "t": "En vivo" if es_vivo else "Hoy",
+                "k": "eq",
+                "img": img,
+                "ab": ab or nom[:3].upper(),
+                "p": 0 if es_vivo else 1,
+            })
+
+    # 2. Ligas activas
+    ligas_meta = [
+        ("NBA", "Baloncesto · USA", "🏀"),
+        ("Premier League", "Fútbol · Inglaterra", "⚽"),
+        ("LaLiga", "Fútbol · España", "⚽"),
+        ("Champions League", "Fútbol · Europa", "⚽"),
+        ("Liga Chilena", "Fútbol · Chile", "⚽"),
+        ("Liga Argentina", "Fútbol · Argentina", "⚽"),
+    ]
+    for nom_l, sub_l, ico in ligas_meta:
+        items.append({
+            "n": nom_l,
+            "s": sub_l,
+            "t": "Liga",
+            "k": "liga",
+            "img": "",
+            "ab": ico,
+            "p": 2,
+        })
+
+    # 3. Todos los equipos NBA (si no estaban ya en partidos de hoy)
+    try:
+        eq_nba = fd.mapa_equipos()
+    except Exception:  # noqa: BLE001
+        eq_nba = {}
+    for eq in eq_nba.values():
+        nom = (eq.get("nombre") or "").strip()
+        if not nom:
+            continue
+        clave = _sin_tildes(nom)
+        if clave in vistos_eq:
+            continue
+        vistos_eq.add(clave)
+        ab = eq.get("abrev") or ""
+        items.append({
+            "n": nom,
+            "s": f"NBA · {ab}" if ab else "NBA",
+            "t": "Equipo",
+            "k": "eq",
+            "img": fd.escudo(ab),
+            "ab": ab or nom[:3].upper(),
+            "p": 3,
+        })
+
+    # 4. Jugadores NBA (favoritos y estrellas primero)
+    vistos_jug = set()
+    try:
+        info_jug = fd.jugadores_info()
+    except Exception:  # noqa: BLE001
+        info_jug = {}
+    try:
+        fav_ids = {str(x) for x in favoritos.jugadores()}
+    except Exception:  # noqa: BLE001
+        fav_ids = set()
+
+    for pid in fav_ids:
+        j = info_jug.get(pid) or {}
+        nom = (j.get("nombre") or "").strip()
+        if not nom or pid in vistos_jug:
+            continue
+        vistos_jug.add(pid)
+        eq = j.get("equipo") or "NBA"
+        items.append({
+            "n": nom,
+            "s": f"Favorito · {eq}",
+            "t": "Jugador",
+            "k": "jug",
+            "img": fd.foto(pid),
+            "ab": "".join(p[0] for p in nom.split()[:2]).upper() or "NB",
+            "p": 1,
+        })
+
+    for pid, nom, eq in _ESTRELLAS_RESPALDO:
+        if pid in vistos_jug:
+            continue
+        vistos_jug.add(pid)
+        items.append({
+            "n": nom,
+            "s": f"NBA · {eq}",
+            "t": "Jugador",
+            "k": "jug",
+            "img": fd.foto(pid),
+            "ab": "".join(p[0] for p in nom.split()[:2]).upper() or "NB",
+            "p": 1,
+        })
+
+    for pid, j in info_jug.items():
+        if pid in vistos_jug:
+            continue
+        nom = (j.get("nombre") or "").strip()
+        if not nom:
+            continue
+        vistos_jug.add(pid)
+        eq = j.get("equipo") or "NBA"
+        items.append({
+            "n": nom,
+            "s": f"NBA · {eq}",
+            "t": "Jugador",
+            "k": "jug",
+            "img": fd.foto(pid),
+            "ab": "".join(p[0] for p in nom.split()[:2]).upper() or "NB",
+            "p": 4,
+        })
+
+    return items
+
+
+def _inyectar_buscador_js(catalogo):
+    """Inyecta autocompletado instantáneo con logos/fotos sobre el buscador de Inicio."""
+    payload = json.dumps(catalogo, ensure_ascii=False).replace("</", "<\\/")
+    html = f"""<script>
+(function() {{
+  try {{
+    var P = window.parent;
+    var doc = P.document;
+    P.__slSearchCatalog = {payload};
+
+    if (!doc.getElementById('sl-ac-style')) {{
+      var st = doc.createElement('style');
+      st.id = 'sl-ac-style';
+      st.textContent = `
+        .sl-ac-drop {{
+          position: fixed; z-index: 999999; display: none;
+          background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px;
+          box-shadow: 0 20px 44px -10px rgba(15,23,42,.18), 0 4px 12px -2px rgba(15,23,42,.06);
+          overflow: hidden; font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+        }}
+        .sl-ac-head {{
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 7px 14px; background: #F8FAFC; border-bottom: 1px solid #EEF2F6;
+          font-size: .71rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #64748B;
+        }}
+        .sl-ac-list {{ max-height: 320px; overflow-y: auto; }}
+        .sl-ac-item {{
+          display: flex; align-items: center; gap: 11px; padding: 8px 14px;
+          cursor: pointer; border-bottom: 1px solid #F1F5F9; transition: background .1s ease;
+        }}
+        .sl-ac-item:last-child {{ border-bottom: none; }}
+        .sl-ac-item:hover, .sl-ac-item.active {{ background: #F5F7FF; }}
+        .sl-ac-av {{
+          width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center;
+          overflow: hidden; position: relative; font-weight: 800; font-size: .74rem; color: #4338CA;
+        }}
+        .sl-ac-av.jug {{
+          border-radius: 50%; background: radial-gradient(circle at 50% 25%, #F8FAFC, #E0E7FF);
+          border: 1.5px solid #C7D2FE;
+        }}
+        .sl-ac-av.eq {{
+          border-radius: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 3px;
+        }}
+        .sl-ac-av.liga {{
+          border-radius: 10px; background: #EEF2FF; border: 1px solid #C7D2FE; font-size: 1rem;
+        }}
+        .sl-ac-av img {{ width: 100%; height: 100%; display: block; }}
+        .sl-ac-av.jug img {{ object-fit: cover; object-position: 50% 10%; }}
+        .sl-ac-av.eq img {{ object-fit: contain; }}
+        .sl-ac-info {{ flex: 1; min-width: 0; }}
+        .sl-ac-name {{
+          font-size: .88rem; font-weight: 700; color: #0F172A; line-height: 1.2;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }}
+        .sl-ac-name mark {{
+          background: #EEF2FF; color: #4338CA; padding: 0 2px; border-radius: 4px; font-weight: 800;
+        }}
+        .sl-ac-sub {{
+          font-size: .74rem; color: #64748B; margin-top: 1px;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }}
+        .sl-ac-tag {{
+          flex-shrink: 0; font-size: .68rem; font-weight: 700; padding: 2px 8px;
+          border-radius: 999px; border: 1px solid #E2E8F0; background: #F8FAFC; color: #475569;
+        }}
+        .sl-ac-tag.vivo {{ background: #FFF1F2; color: #E11D48; border-color: #FECDD3; }}
+        .sl-ac-tag.eq, .sl-ac-tag.hoy {{ background: #EEF2FF; color: #4338CA; border-color: #C7D2FE; }}
+        .sl-ac-tag.jug {{ background: #F5F3FF; color: #6D28D9; border-color: #DDD6FE; }}
+        .sl-ac-foot {{
+          padding: 6px 14px; background: #F8FAFC; border-top: 1px solid #EEF2F6;
+          font-size: .7rem; color: #94A3B8; display: flex; justify-content: space-between;
+        }}
+        .sl-ac-clear {{
+          position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+          width: 22px; height: 22px; border-radius: 50%; border: none;
+          background: #F1F5F9; color: #64748B; font-size: .82rem; line-height: 1;
+          cursor: pointer; display: none; place-items: center; z-index: 3;
+        }}
+        .sl-ac-clear:hover {{ background: #E2E8F0; color: #0F172A; }}
+      `;
+      doc.head.appendChild(st);
+    }}
+
+    var drop = doc.getElementById('sl-ac-drop');
+    if (!drop) {{
+      drop = doc.createElement('div');
+      drop.id = 'sl-ac-drop';
+      drop.className = 'sl-ac-drop';
+      doc.body.appendChild(drop);
+    }}
+
+    var norm = function(s) {{
+      return (s || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+    }};
+    var esc = function(s) {{
+      return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }};
+
+    var bind = function() {{
+      var wrap = doc.querySelector('.st-key-inicio_busqueda');
+      var inp = wrap ? wrap.querySelector('input') : null;
+      if (!inp) return;
+
+      var base = inp.closest('[data-baseweb="input"]') || inp.parentElement;
+      if (base && !base.querySelector('.sl-ac-clear')) {{
+        base.style.position = 'relative';
+        var clr = doc.createElement('button');
+        clr.type = 'button';
+        clr.className = 'sl-ac-clear';
+        clr.title = 'Limpiar búsqueda';
+        clr.textContent = '×';
+        clr.addEventListener('mousedown', function(e) {{
+          e.preventDefault();
+          commitValue(inp, '');
+          clr.style.display = 'none';
+          drop.style.display = 'none';
+        }});
+        base.appendChild(clr);
+      }}
+      var clrBtn = base ? base.querySelector('.sl-ac-clear') : null;
+      if (clrBtn) clrBtn.style.display = inp.value ? 'grid' : 'none';
+
+      if (inp.dataset.slAcBound === '1') return;
+      inp.dataset.slAcBound = '1';
+
+      var activeIdx = -1;
+      var currentItems = [];
+
+      var commitValue = function(targetInp, val) {{
+        var setter = Object.getOwnPropertyDescriptor(P.HTMLInputElement.prototype, 'value').set;
+        setter.call(targetInp, val);
+        targetInp.dispatchEvent(new P.Event('input', {{ bubbles: true }}));
+        targetInp.dispatchEvent(new P.KeyboardEvent('keydown', {{
+          key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true
+        }}));
+      }};
+
+      var placeDrop = function() {{
+        var box = (inp.closest('[data-baseweb="input"]') || inp).getBoundingClientRect();
+        drop.style.left = Math.max(8, box.left) + 'px';
+        drop.style.top = (box.bottom + 6) + 'px';
+        drop.style.width = Math.max(280, box.width) + 'px';
+      }};
+
+      var highlightMatch = function(name, rawQ) {{
+        if (!rawQ) return esc(name);
+        var nName = norm(name);
+        var nQ = norm(rawQ);
+        var idx = nName.indexOf(nQ);
+        if (idx < 0) return esc(name);
+        return esc(name.slice(0, idx)) + '<mark>' + esc(name.slice(idx, idx + rawQ.length)) + '</mark>' + esc(name.slice(idx + rawQ.length));
+      }};
+
+      var renderDrop = function(rawQ) {{
+        var cat = P.__slSearchCatalog || [];
+        var q = norm((rawQ || '').trim());
+        var list = [];
+        if (!q) {{
+          list = cat.filter(function(x) {{ return x.p <= 2; }}).slice(0, 6);
+        }} else {{
+          var scored = [];
+          for (var i = 0; i < cat.length; i++) {{
+            var it = cat[i];
+            var nName = norm(it.n);
+            var nSub = norm(it.s);
+            var pos = nName.indexOf(q);
+            var inSub = nSub.indexOf(q);
+            if (pos === -1 && inSub === -1) continue;
+            var rank = (pos === 0 ? 0 : (nName.indexOf(' ' + q) >= 0 ? 1 : (pos > 0 ? 2 : 3))) * 10 + (it.p || 4);
+            scored.push({{ item: it, rank: rank }});
+          }}
+          scored.sort(function(a, b) {{ return a.rank - b.rank; }});
+          list = scored.slice(0, 8).map(function(x) {{ return x.item; }});
+        }}
+        currentItems = list;
+        activeIdx = -1;
+        if (!list.length) {{
+          drop.innerHTML = '<div class="sl-ac-head"><span>Sin coincidencias</span></div>'
+            + '<div style="padding:12px 14px;font-size:.82rem;color:#64748B;">No encontramos equipos, ligas ni jugadores con <b>' + esc(rawQ) + '</b>.</div>';
+          placeDrop();
+          drop.style.display = 'block';
+          return;
+        }}
+        var headTxt = q ? ('Sugerencias · ' + list.length) : 'Búsquedas rápidas';
+        var rows = list.map(function(it, idx) {{
+          var av = '';
+          if (it.img) {{
+            av = '<div class="sl-ac-av ' + it.k + '"><img src="' + esc(it.img) + '" alt="" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'block\\';"><span style="display:none">' + esc(it.ab || '?') + '</span></div>';
+          }} else {{
+            av = '<div class="sl-ac-av ' + it.k + '">' + esc(it.ab || '★') + '</div>';
+          }}
+          var tagCls = it.t === 'En vivo' ? 'vivo' : (it.k === 'jug' ? 'jug' : (it.k === 'eq' ? 'eq' : ''));
+          return '<div class="sl-ac-item" data-idx="' + idx + '">' + av
+            + '<div class="sl-ac-info"><div class="sl-ac-name">' + highlightMatch(it.n, (rawQ || '').trim()) + '</div>'
+            + '<div class="sl-ac-sub">' + esc(it.s) + '</div></div>'
+            + '<span class="sl-ac-tag ' + tagCls + '">' + esc(it.t) + '</span></div>';
+        }}).join('');
+        drop.innerHTML = '<div class="sl-ac-head"><span>' + headTxt + '</span><span>Click o Enter</span></div>'
+          + '<div class="sl-ac-list">' + rows + '</div>'
+          + '<div class="sl-ac-foot"><span>↑↓ navegar · Enter aplicar</span><span>Esc cerrar</span></div>';
+        placeDrop();
+        drop.style.display = 'block';
+        drop.querySelectorAll('.sl-ac-item').forEach(function(el) {{
+          el.addEventListener('mousedown', function(ev) {{
+            ev.preventDefault();
+            var it = currentItems[parseInt(el.dataset.idx, 10)];
+            if (it) {{
+              drop.style.display = 'none';
+              commitValue(inp, it.n);
+            }}
+          }});
+        }});
+      }};
+
+      inp.addEventListener('focus', function() {{ renderDrop(inp.value); }});
+      inp.addEventListener('input', function() {{
+        if (clrBtn) clrBtn.style.display = inp.value ? 'grid' : 'none';
+        renderDrop(inp.value);
+      }});
+      inp.addEventListener('blur', function() {{
+        setTimeout(function() {{ drop.style.display = 'none'; }}, 140);
+      }});
+      inp.addEventListener('keydown', function(e) {{
+        if (drop.style.display !== 'block') return;
+        var items = drop.querySelectorAll('.sl-ac-item');
+        if (e.key === 'ArrowDown') {{
+          e.preventDefault();
+          activeIdx = (activeIdx + 1) % Math.max(1, items.length);
+        }} else if (e.key === 'ArrowUp') {{
+          e.preventDefault();
+          activeIdx = (activeIdx - 1 + items.length) % Math.max(1, items.length);
+        }} else if (e.key === 'Escape') {{
+          drop.style.display = 'none';
+          return;
+        }} else if (e.key === 'Enter' && activeIdx >= 0 && currentItems[activeIdx]) {{
+          e.preventDefault();
+          e.stopPropagation();
+          var chosen = currentItems[activeIdx];
+          drop.style.display = 'none';
+          commitValue(inp, chosen.n);
+          return;
+        }} else {{
+          return;
+        }}
+        items.forEach(function(el, i) {{
+          el.classList.toggle('active', i === activeIdx);
+          if (i === activeIdx) el.scrollIntoView({{ block: 'nearest' }});
+        }});
+      }});
+
+      P.addEventListener('resize', function() {{ if (drop.style.display === 'block') placeDrop(); }});
+      doc.addEventListener('scroll', function() {{ if (drop.style.display === 'block') placeDrop(); }}, true);
+    }};
+
+    bind();
+    setTimeout(bind, 120);
+  }} catch(e) {{}}
+}})();
+</script>"""
+    components.html(html, height=0, width=0)
+
+
 def pagina_inicio():
     """Pantalla principal: compacta, directa y con En vivo + Partidos de hoy visibles sin scroll."""
     _abrir_alertas_js()
 
-    # 1. Línea de saludo/resumen + buscador compacto (sin hero ni tarjetas repetidas)
+    # 1. Línea de saludo/resumen + buscador compacto con autocompletado en vivo
     c_sal, c_bus = st.columns([1.3, 1.4], vertical_alignment="center")
     c_sal.markdown(
-        '<div style="padding:2px 0;">'
-        '<div style="font-family:var(--pl-font-cond);font-size:1.35rem;font-weight:700;color:#111827;line-height:1.15;">Centro de análisis deportivo</div>'
-        '<div style="font-size:.82rem;color:#475569;">Marcadores en directo, partidos de hoy y tus favoritos en un solo lugar.</div>'
+        '<div class="sl-top-bar">'
+        '<div class="sl-top-ico">'
+        '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+        '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'
+        '</svg>'
+        '</div>'
+        '<div>'
+        '<div class="sl-top-title">Centro de análisis deportivo</div>'
+        '<div class="sl-top-sub">Marcadores en directo, partidos de hoy y tus favoritos en un solo lugar.</div>'
+        '</div>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -1002,7 +1434,10 @@ def pagina_inicio():
     )
 
     # 2. En vivo ahora + Paneles destacados (Partido del día) + Partidos de hoy
-    _bloque_jornada(busqueda)
+    partidos = _bloque_jornada(busqueda)
 
     # 3. Jugadores destacados con foto real y líneas clave
     _render_jugadores_destacados(busqueda)
+
+    # 4. Autocompletado instantáneo con fotos de jugadores y escudos de equipos
+    _inyectar_buscador_js(_catalogo_busqueda(partidos or []))

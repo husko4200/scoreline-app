@@ -1767,6 +1767,67 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
 }
 
 /* ───────── PowerStats-style Player Props & Match Explorer ───────── */
+.sl-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 0;
+}
+.sl-top-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+  border: 1px solid #C7D2FE;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: #4338CA;
+  box-shadow: 0 3px 10px -3px rgba(79, 70, 229, .22);
+}
+.sl-top-title {
+  font-family: var(--pl-font-cond);
+  font-size: 1.38rem;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.12;
+  letter-spacing: -.01em;
+}
+.sl-top-sub {
+  font-size: .81rem;
+  color: #64748B;
+  margin-top: 2px;
+}
+[data-testid="stMain"] .st-key-inicio_busqueda [data-testid="InputInstructions"] {
+  display: none !important;
+}
+[data-testid="stMain"] .st-key-inicio_busqueda [data-baseweb="input"],
+[data-testid="stMain"] .st-key-inicio_busqueda [data-baseweb="base-input"] {
+  background: #FFFFFF !important;
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: 14px !important;
+  min-height: 44px !important;
+  box-shadow: 0 4px 16px -6px rgba(15, 23, 42, .08), 0 1px 2px rgba(15, 23, 42, .03) !important;
+  transition: border-color .16s ease, box-shadow .16s ease !important;
+}
+[data-testid="stMain"] .st-key-inicio_busqueda [data-baseweb="input"]:hover {
+  border-color: #CBD5E1 !important;
+}
+[data-testid="stMain"] .st-key-inicio_busqueda [data-baseweb="input"]:focus-within,
+[data-testid="stMain"] .st-key-inicio_busqueda [data-baseweb="base-input"]:focus-within {
+  border-color: #4F46E5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, .14), 0 10px 24px -8px rgba(79, 70, 229, .18) !important;
+}
+[data-testid="stMain"] .st-key-inicio_busqueda input {
+  font-size: .9rem !important;
+  font-weight: 500 !important;
+  color: #0F172A !important;
+  padding-right: 34px !important;
+}
+[data-testid="stMain"] .st-key-inicio_busqueda input::placeholder {
+  color: #94A3B8 !important;
+  font-weight: 400 !important;
+}
 .sl-sec-head {
   display: flex;
   align-items: center;
