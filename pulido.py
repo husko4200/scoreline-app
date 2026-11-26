@@ -332,12 +332,10 @@ html, body {
   padding-bottom: 1.1rem !important;
 }
 
-/* Logo ScoreLine integrado sin borde, sombra ni esquinas redondeadas */
+/* Logo ScoreLine — más grande + reflejo limpio */
 @keyframes sl-logo-gleam {
-  0%   { left: -80%; opacity: 0; }
-  10%  { opacity: 1; }
-  60%  { opacity: 1; }
-  100% { left: 150%; opacity: 0; }
+  0%   { transform: translateX(-140%) skewX(-16deg); }
+  100% { transform: translateX(360%) skewX(-16deg); }
 }
 .sl-brand-wrap {
   margin: 0 0 .7rem;
@@ -345,9 +343,9 @@ html, body {
   border-bottom: 1px solid rgba(255,255,255,.1);
 }
 .sl-brand-card {
-  background: #15103F !important;
-  border-radius: 0 !important;
-  padding: 2px 0 6px;
+  background: transparent !important;
+  border-radius: 12px !important;
+  padding: 6px 8px 6px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -356,44 +354,38 @@ html, body {
   position: relative;
   overflow: hidden;
 }
-/* Reflejo / gleam que pasa por encima del logo */
+/* Franja de reflejo que cruza el logo cada 4 s */
 .sl-brand-card::after {
   content: '';
   position: absolute;
-  top: -10%;
-  left: -80%;
-  width: 48%;
-  height: 120%;
+  top: 0; bottom: 0;
+  left: 0;
+  width: 32%;
   background: linear-gradient(
-    105deg,
-    transparent 20%,
-    rgba(255,255,255,0.0) 30%,
-    rgba(255,255,255,0.55) 50%,
-    rgba(255,255,255,0.0) 70%,
-    transparent 80%
+    90deg,
+    transparent,
+    rgba(255,255,255,.45),
+    transparent
   );
-  transform: skewX(-18deg);
-  animation: sl-logo-gleam 3.8s ease-in-out infinite;
-  animation-delay: 1.2s;
+  animation: sl-logo-gleam 4s cubic-bezier(.4,0,.6,1) infinite;
+  animation-delay: 1.5s;
   pointer-events: none;
   z-index: 10;
 }
 .sl-brand-img {
   width: 100%;
-  max-width: 240px;
+  max-width: 234px;
   height: auto;
   display: block;
   border: none !important;
   border-radius: 0 !important;
-  box-shadow:
-    0 0 24px rgba(167,139,250,.28),
-    0 0 48px rgba(79,70,229,.18);
-  filter: drop-shadow(0 2px 10px rgba(167,139,250,.35));
-  transition: filter .3s ease, transform .3s ease;
+  box-shadow: none !important;
+  filter: drop-shadow(0 2px 12px rgba(167,139,250,.5));
+  transition: filter .35s ease, transform .35s ease;
 }
 .sl-brand-img:hover {
-  filter: drop-shadow(0 4px 18px rgba(167,139,250,.65));
-  transform: scale(1.03);
+  filter: drop-shadow(0 4px 20px rgba(167,139,250,.85));
+  transform: scale(1.04);
 }
 .sl-brand-fallback {
   font-family: 'Roboto', sans-serif;
