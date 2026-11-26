@@ -17,6 +17,111 @@ from common import ZONA
 
 _CSS = """
 <style>
+.pt-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: .35rem 0 .9rem;
+}
+@media (max-width: 960px) {
+  .pt-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .pt-kpi-grid { grid-template-columns: 1fr; }
+}
+.pt-kpi {
+  position: relative;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 13px 15px 12px;
+  box-shadow: 0 4px 16px -4px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .03);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.pt-kpi:hover {
+  transform: translateY(-2px);
+  border-color: #CBD5E1;
+  box-shadow: 0 10px 22px -6px rgba(15, 23, 42, .10);
+}
+.pt-kpi::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 3px;
+  background: var(--kpi-acc, #4F46E5);
+}
+.pt-kpi--indigo { --kpi-acc: #4F46E5; }
+.pt-kpi--violet { --kpi-acc: #7C3AED; }
+.pt-kpi--live   { --kpi-acc: #E11D48; }
+.pt-kpi--gold   { --kpi-acc: #F59E0B; }
+.pt-kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.pt-kpi-ico {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: .8rem;
+  background: #F1F5F9;
+  flex-shrink: 0;
+}
+.pt-kpi--indigo .pt-kpi-ico { background: #EEF2FF; }
+.pt-kpi--violet .pt-kpi-ico { background: #F5F3FF; }
+.pt-kpi--live   .pt-kpi-ico { background: #FFF1F2; }
+.pt-kpi--gold   .pt-kpi-ico { background: #FFFBEB; }
+.pt-kpi-lbl {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #64748B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pt-kpi-val {
+  font-family: 'Roboto Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0F172A;
+}
+.pt-kpi--live .pt-kpi-val { color: #E11D48; }
+.pt-kpi-sub {
+  margin-top: 4px;
+  font-size: .72rem;
+  font-weight: 500;
+  color: #64748B;
+}
+.pt-kpi-name {
+  font-family: 'Roboto Condensed', 'Roboto', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pt-kpi-pill {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #B45309;
+  font-family: 'Roboto Mono', monospace;
+  font-size: .72rem;
+  font-weight: 700;
+}
 .pt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin: .4rem 0 1.2rem; }
 .pt-card {
   display: flex; flex-direction: column; gap: .75rem; padding: 1.1rem 1.15rem 1.05rem !important;
@@ -238,7 +343,7 @@ def _cuerpo():
             })
 
         items_jug = []
-        top_anotador = ("–", 0.0)
+        top_anotador = ("–", None, 0.0)
         for pid in jugs:
             inf = info.get(pid)
             eq = fd.equipo_por_abrev(inf["equipo"]) if inf else None
@@ -249,8 +354,10 @@ def _cuerpo():
             es_hoy_vivo = (prox.get("estado") == "in") or (mins is not None and mins <= 24 * 60)
             nom = inf["nombre"] if inf else f"Jugador {pid}"
             ab = inf["equipo"] if inf else ""
-            if forma and forma.get("pts") is not None and float(forma["pts"]) > top_anotador[1]:
-                top_anotador = (f"{nom.split()[-1]} ({forma['pts']:g} pts)", float(forma["pts"]))
+            if forma and forma.get("pts") is not None and float(forma["pts"]) > top_anotador[2]:
+                partes_nom = nom.split()
+                nom_corto = f"{partes_nom[0][0]}. {' '.join(partes_nom[1:])}" if len(partes_nom) > 1 else nom
+                top_anotador = (nom_corto, f"{forma['pts']:g} pts prom.", float(forma["pts"]))
             items_jug.append({
                 "tipo": "jug",
                 "nombre": nom,
@@ -259,12 +366,33 @@ def _cuerpo():
                 "html": _tarjeta_jugador(pid, inf, forma, cal, les),
             })
 
-    # 1. KPIs interactivos resumen de Tu portada
-    k1, k2, k3, k4 = st.columns(4, gap="small")
-    k1.metric("🛡️ Equipos favoritos", len(items_eq))
-    k2.metric("👤 Jugadores favoritos", len(items_jug))
-    k3.metric("🔥 Juegan hoy / en vivo", en_juego_o_hoy)
-    k4.metric("🏆 Top anotador (5 PJ)", top_anotador[0])
+    # 1. KPIs resumen de Tu portada
+    top_pill = f'<span class="pt-kpi-pill">{e(top_anotador[1])}</span>' if top_anotador[1] else '<div class="pt-kpi-sub">Sin datos</div>'
+    st.markdown(
+        f'<div class="pt-kpi-grid">'
+        f'<div class="pt-kpi pt-kpi--indigo">'
+        f'<div class="pt-kpi-head"><span class="pt-kpi-ico">🛡️</span><span class="pt-kpi-lbl">Equipos favoritos</span></div>'
+        f'<div class="pt-kpi-val">{len(items_eq)}</div>'
+        f'<div class="pt-kpi-sub">En seguimiento</div>'
+        f'</div>'
+        f'<div class="pt-kpi pt-kpi--violet">'
+        f'<div class="pt-kpi-head"><span class="pt-kpi-ico">👤</span><span class="pt-kpi-lbl">Jugadores favoritos</span></div>'
+        f'<div class="pt-kpi-val">{len(items_jug)}</div>'
+        f'<div class="pt-kpi-sub">Con forma reciente</div>'
+        f'</div>'
+        f'<div class="pt-kpi pt-kpi--live">'
+        f'<div class="pt-kpi-head"><span class="pt-kpi-ico">🔥</span><span class="pt-kpi-lbl">Juegan hoy / en vivo</span></div>'
+        f'<div class="pt-kpi-val">{en_juego_o_hoy}</div>'
+        f'<div class="pt-kpi-sub">Partidos activos</div>'
+        f'</div>'
+        f'<div class="pt-kpi pt-kpi--gold">'
+        f'<div class="pt-kpi-head"><span class="pt-kpi-ico">🏆</span><span class="pt-kpi-lbl">Top anotador (5 PJ)</span></div>'
+        f'<div class="pt-kpi-name" title="{e(top_anotador[0])}">{e(top_anotador[0])}</div>'
+        f'{top_pill}'
+        f'</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     # 2. Controles de filtro + buscador
     c_flt, c_bus = st.columns([2.6, 1.4], vertical_alignment="center")
