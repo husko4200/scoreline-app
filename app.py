@@ -18,10 +18,12 @@ import os
 import textwrap
 import streamlit as st
 
+_ICONO_APP = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "scoreline_icon.png")
+
 # set_page_config debe ser lo PRIMERO que Streamlit ejecuta, por eso va antes de importar los módulos.
 st.set_page_config(
     page_title="ScoreLine · Inteligencia Deportiva",
-    page_icon="⚡",
+    page_icon=_ICONO_APP if os.path.isfile(_ICONO_APP) else "⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
