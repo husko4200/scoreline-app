@@ -898,9 +898,25 @@ def live_panel():
     with st.expander("📋 Ver tabla completa de marcadores y líneas", expanded=False):
         st.dataframe(df_vivo, hide_index=True, use_container_width=True)
     _avisar_marcadores(juegos)   # movimiento.py: fanfarria, confeti y aviso cuando cambia un marcador
-    idx = st.selectbox("Analizar partido", range(len(juegos)), key="nba_live_sel",
-                       index=next((i for i, j in enumerate(juegos) if j["estado"] == "in"), 0),
-                       format_func=lambda i: f"{juegos[i]['visita']['nombre']} @ {juegos[i]['local']['nombre']} — {filas[i]['Estado']}")
+
+    # Selector visual de partido para análisis detallado
+    st.markdown(
+        '<div style="margin:14px 0 6px;"><span style="font-size:.72rem;font-weight:700;text-transform:uppercase;'
+        'letter-spacing:.08em;color:#64748B;">📋 Seleccionar partido para análisis detallado</span></div>',
+        unsafe_allow_html=True,
+    )
+    idx = st.selectbox(
+        "Partido",
+        range(len(juegos)),
+        key="nba_live_sel",
+        index=next((i for i, j in enumerate(juegos) if j["estado"] == "in"), 0),
+        format_func=lambda i: (
+            f"🔴 {juegos[i]['visita']['nombre']} @ {juegos[i]['local']['nombre']}  ·  EN VIVO {filas[i].get('Detalle', '')}"
+            if juegos[i]["estado"] == "in"
+            else f"{'✅' if juegos[i]['estado'] == 'post' else '⏳'} {juegos[i]['visita']['nombre']} @ {juegos[i]['local']['nombre']}  ·  {filas[i]['Estado']}"
+        ),
+        label_visibility="collapsed",
+    )
     _detalle(juegos[idx])
 
 

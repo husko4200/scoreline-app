@@ -153,7 +153,7 @@ def pagina_vivo():
     )
     auto_activo = st.session_state.get("vivo_auto_on", True)
     seg_actual = st.session_state.get("vivo_auto_seg", 30)
-    lbl_pop = f"🔄 Auto · {seg_actual} s" if auto_activo else "⏸️ Auto apagado"
+    lbl_pop = f"🔄 Auto · {seg_actual} s" if auto_activo else "⏸️ Pausado"
     with c_auto:
         with st.popover(lbl_pop, use_container_width=True):
             auto = st.toggle(
