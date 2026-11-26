@@ -1748,7 +1748,7 @@ def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
 
     def _etq(i):
         eq = por_id[i]
-        return f"{eq['nombre']} ({eq['abbr']})" if (con_abbr and eq.get("abbr")) else eq["nombre"]
+        return eq["nombre"]
 
     def _pill(eq):
         logo = eq.get("logo") or ""
@@ -1801,10 +1801,25 @@ def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
     var P = window.parent;
     if (!P || !P.document) return;
     P.__slLogos = Object.assign(P.__slLogos || {{}}, {_json.dumps(logos_map)});
+    function syncActive() {{
+      var list = P.document.querySelector('div[data-baseweb="popover"] ul[role="listbox"]');
+      if (!list) return;
+      var activeId = '';
+      var inputs = P.document.querySelectorAll('[data-baseweb="select"] input[aria-activedescendant]');
+      inputs.forEach(function(inp) {{
+        var v = inp.getAttribute('aria-activedescendant');
+        if (v) activeId = v;
+      }});
+      var opts = list.querySelectorAll('li[role="option"]');
+      opts.forEach(function(li) {{
+        var isAct = activeId && li.id === activeId;
+        li.classList.toggle('sl-kb-active', !!isAct);
+      }});
+    }}
     function paint() {{
       var opts = P.document.querySelectorAll('div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]');
       opts.forEach(function(li) {{
-        var txt = (li.textContent || '').trim();
+        var txt = (li.textContent || '').replace('↵', '').trim();
         var url = P.__slLogos[txt];
         if (!url) return;
         var cur = li.querySelector('img.sl-opt-logo');
@@ -1816,10 +1831,17 @@ def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
         img.style.cssText = 'width:18px;height:18px;object-fit:contain;flex-shrink:0;margin-right:2px;';
         li.prepend(img);
       }});
+      syncActive();
     }}
     if (!P.__slLogoObs) {{
       P.__slLogoObs = new MutationObserver(paint);
-      P.__slLogoObs.observe(P.document.body, {{ childList: true, subtree: true }});
+      P.__slLogoObs.observe(P.document.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-activedescendant', 'aria-selected'] }});
+      P.document.addEventListener('keydown', function(ev) {{
+        if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {{
+          setTimeout(syncActive, 10);
+          setTimeout(syncActive, 40);
+        }}
+      }}, true);
     }}
     paint();
   }} catch(e) {{}}

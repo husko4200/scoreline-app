@@ -873,14 +873,15 @@ body .stApp [data-testid="stMain"] .stButton > button[kind="primary"] * {
 [data-baseweb="tag"] * { color: var(--pl-acc-osc) !important; }
 [data-baseweb="slider"], [data-baseweb="checkbox"] { filter: __FILTRO__ !important; }
 
-/* Menú desplegable de selectores (tema oscuro ScoreLine + resalte al bajar con teclas) */
+/* Menú desplegable de selectores (blanco elegante + resalte claro al subir/bajar con flechas) */
 div[data-baseweb="popover"] > div,
 div[data-baseweb="popover"] ul[role="listbox"] {
-  background: linear-gradient(180deg, #131836 0%, #0B0F20 100%) !important;
-  border: 1px solid rgba(139, 92, 246, .45) !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
   border-radius: 14px !important;
-  box-shadow: 0 16px 36px rgba(11, 15, 32, .45) !important;
-  color: #E2E8F0 !important;
+  box-shadow: 0 14px 34px -8px rgba(15, 23, 42, .16), 0 4px 12px -4px rgba(15, 23, 42, .06) !important;
+  color: #0F172A !important;
+  padding: 4px 0 !important;
 }
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"] {
   display: flex !important;
@@ -890,26 +891,28 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"] {
   margin: 2px 6px !important;
   border-radius: 9px !important;
   border-left: 3px solid transparent !important;
-  color: #E2E8F0 !important;
+  color: #1E293B !important;
   font-size: .88rem !important;
   background: transparent !important;
-  transition: background .12s ease, border-color .12s ease !important;
+  transition: background .1s ease, border-color .1s ease !important;
 }
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][aria-selected="true"],
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][data-highlighted="true"],
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"].sl-kb-active,
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover,
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:focus {
-  background: linear-gradient(90deg, rgba(99, 102, 241, .45), rgba(139, 92, 246, .25)) !important;
-  border-left: 3px solid #A855F7 !important;
-  color: #FFFFFF !important;
+  background: #EEF2FF !important;
+  border-left: 3px solid #4F46E5 !important;
+  color: #1E1B4B !important;
   font-weight: 700 !important;
 }
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][aria-selected="true"]::after,
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][data-highlighted="true"]::after,
+div[data-baseweb="popover"] ul[role="listbox"] li[role="option"].sl-kb-active::after,
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   content: "↵";
   margin-left: auto;
-  color: #C4B5FD;
+  color: #4F46E5;
   font-size: .82rem;
   font-weight: 700;
 }
@@ -917,13 +920,14 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 12px;
+  padding: 8px 12px;
   margin-bottom: 6px;
   border-radius: 11px;
-  background: linear-gradient(135deg, #131836 0%, #1B2148 100%);
-  border: 1px solid rgba(139, 92, 246, .38);
-  color: #F8FAFC;
-  font-size: .84rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 2px 8px -4px rgba(15, 23, 42, .06);
+  color: #0F172A;
+  font-size: .86rem;
   font-weight: 700;
 }
 .sl-team-pill img {
