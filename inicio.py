@@ -335,13 +335,17 @@ def _render_jugadores_destacados(filtro_texto=""):
                      if meta_parts else "")
 
         if serie:
-            tope = max(serie + [1])
+            ultimos = serie[-5:]
+            tope = max(ultimos + [1])
             barras = "".join(
-                f'<i class="{"last" if idx == len(serie) - 1 else ""}" title="{p:g} pts" '
-                f'style="height:{max(14, round(100 * p / tope))}%"></i>'
-                for idx, p in enumerate(serie)
+                f'<div class="sl-pspark-col" title="{p:g} pts">'
+                f'<span class="sl-pspark-val{" last" if idx == len(ultimos) - 1 else ""}">{p:g}</span>'
+                f'<div class="sl-pspark-track">'
+                f'<i class="{"last" if idx == len(ultimos) - 1 else ""}" style="height:{max(18, round(100 * p / tope))}%"></i>'
+                f'</div></div>'
+                for idx, p in enumerate(ultimos)
             )
-            spark_html = f'<div class="sl-pspark" title="Últimos {len(serie)} partidos">{barras}</div>'
+            spark_html = f'<div class="sl-pspark" title="Últimos {len(ultimos)} partidos">{barras}</div>'
         else:
             spark_html = ""
 

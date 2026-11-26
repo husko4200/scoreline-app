@@ -1872,7 +1872,7 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
 .sl-ptrend.flat { background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE; }
 .sl-pmeta-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   font-size: 12px;
@@ -1887,15 +1887,44 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
 .sl-pspark {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  height: 26px;
-  padding-top: 2px;
+  gap: 5px;
+  height: 46px;
+  padding-top: 4px;
+}
+.sl-pspark-col {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+}
+.sl-pspark-val {
+  font-family: var(--pl-font-mono, 'Roboto Mono', monospace);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  color: #64748B;
+  font-variant-numeric: tabular-nums;
+}
+.sl-pspark-val.last {
+  color: #4F46E5;
+}
+.sl-pspark-track {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
 }
 .sl-pspark i {
-  flex: 1;
+  width: 100%;
   min-height: 4px;
-  border-radius: 3px 3px 2px 2px;
+  border-radius: 4px 4px 2px 2px;
   background: #C7D2FE;
+  display: block;
 }
 .sl-pspark i.last {
   background: #4F46E5;
@@ -2364,14 +2393,18 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
 .sl-gold-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
   background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-  color: #111827;
-  font-size: 11.5px;
-  font-weight: 700;
-  padding: 2px 8px;
+  color: #FFFFFF;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
   border-radius: 999px;
-  letter-spacing: .02em;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, .28);
 }
 /* Bloque Pro desenfocado (el contenido real nunca se envía en modo gratis) */
 .sl-pro-box {
@@ -2389,24 +2422,27 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
 }
 .sl-pro-locked {
   position: relative;
-  border-radius: 8px;
-  padding: 6px 8px;
-  background: rgba(245, 158, 11, .08);
-  border: 1px dashed rgba(217, 119, 6, .35);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border: 1px solid #FDE68A;
   overflow: hidden;
-  min-height: 30px;
-  display: flex;
+  min-height: 28px;
+  flex-shrink: 0;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 4px rgba(217, 119, 6, .10);
 }
 .sl-pro-blur {
   filter: blur(6px);
   -webkit-user-select: none;
   user-select: none;
   pointer-events: none;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #334155;
+  white-space: nowrap;
 }
 .sl-pro-overlay {
   position: absolute;
@@ -2415,10 +2451,13 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 12px;
+  padding: 0 10px;
+  white-space: nowrap;
+  font-size: 11px;
   font-weight: 700;
-  color: #78350F;
-  background: rgba(255, 251, 235, .74);
+  color: #92400E;
+  background: rgba(255, 251, 235, .86);
+  backdrop-filter: blur(2px);
 }
 .sl-pro-open {
   font-size: 12.5px;
