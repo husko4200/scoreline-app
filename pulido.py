@@ -374,7 +374,8 @@ html, body {
 }
 .sl-brand-img {
   width: 100%;
-  max-width: 280px;
+  width: 100%;
+  max-width: 100%;
   height: auto;
   display: block;
   border: none !important;
