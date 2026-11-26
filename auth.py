@@ -399,11 +399,19 @@ _CSS_AUTH = """
     border-radius: 4px;
     margin-right: 0.4rem;
 }
+[data-testid="stHorizontalBlock"]:has(.sl-auth-status) {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 0.55rem 0.95rem;
+    box-shadow: 0 2px 10px -3px rgba(15, 23, 42, 0.06);
+    align-items: center !important;
+    margin-top: 0.45rem;
+}
 .sl-auth-status {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding-top: 0.35rem;
 }
 @media (max-width: 768px) {
     .sl-auth-status {

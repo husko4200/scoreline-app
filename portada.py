@@ -448,13 +448,22 @@ def _cuerpo():
         limite = len(filtrados) if ver_todos else 6
         visibles = filtrados[:limite]
         st.markdown(f'<div class="pt-grid">{"".join(it["html"] for it in visibles)}</div>', unsafe_allow_html=True)
+        hora_act = f"{pd.Timestamp.now(tz=ZONA):%H:%M:%S}"
         if len(filtrados) > 6:
+            c_mas, c_upd = st.columns([1.3, 3], vertical_alignment="center")
             lbl = "Mostrar menos (6)" if ver_todos else f"Ver todos ({len(filtrados)})"
-            if st.button(lbl, key="pt_btn_todos"):
+            if c_mas.button(lbl, key="pt_btn_todos"):
                 st.session_state["pt_ver_todos"] = not ver_todos
                 st.rerun()
-
-    st.caption(f"Actualizado {pd.Timestamp.now(tz=ZONA):%H:%M:%S} · se refresca solo cada minuto · lesiones y líneas según ESPN")
+            c_upd.markdown(
+                f'<div style="text-align:right;font-size:.76rem;color:#64748B;">Actualizado {hora_act} · Actualización automática cada 60 s</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f'<div style="font-size:.76rem;color:#64748B;margin-top:4px;">Actualizado {hora_act} · Actualización automática cada 60 s</div>',
+                unsafe_allow_html=True,
+            )
 
 
 def render():
@@ -462,4 +471,3 @@ def render():
     st.markdown("### ⭐ Tu portada")
     _cuerpo()
     _administrar()
-    st.divider()
