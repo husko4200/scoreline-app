@@ -427,13 +427,18 @@ html, body {
   color: rgba(255,255,255,.46);
   margin: .15rem 0 .4rem .35rem;
 }
-/* Radio en contenido principal: ocultar circulito (segmentos) */
-[data-testid="stMain"] [data-testid="stRadio"] label[data-baseweb="radio"] > div:not(:has([data-testid="stMarkdownContainer"])),
+/* Radio en contenido principal: ocultar siempre el circulito nativo (control segmentado profesional) */
+[data-testid="stMain"] [data-testid="stRadio"] label[data-baseweb="radio"] > div:not(:last-of-type),
 [data-testid="stMain"] [data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child,
+[data-testid="stMain"] [data-testid="stRadio"] label[data-baseweb="radio"] > span:first-child,
 [data-testid="stMain"] [data-testid="stRadio"] input[type="radio"] {
   display: none !important;
   width: 0 !important;
+  height: 0 !important;
   margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
 }
 /* ── Bug fix: botones en área principal con texto siempre visible (evita conflicto con sport theme) ── */
 body .stApp [data-testid="stMain"] .stButton > button,
@@ -728,42 +733,54 @@ body .stApp [data-testid="stMain"] .stButton > button[kind="primary"] * {
   font-weight: 600;
 }
 
-/* Radios de página (dentro de tarjetas/paneles) usan índigo */
-[data-testid="stMain"] div[role="radiogroup"] label:has(input:checked) {
-  background: var(--pl-acc) !important;
-  background-image: none !important;
-}
-
-/* ───────── Navegación de página: control segmentado ───────── */
-[data-testid="stMain"] :is(.st-key-nba_grupo, [class*="st-key-nba_vista_"], .st-key-vivo_deporte, .st-key-f_grupo, [class*="st-key-f_vista_"]) [role="radiogroup"] {
-  background: var(--pl-pista) !important;
-  border: none !important;
-  border-radius: 10px !important;
+/* ───────── Navegación de página y filtros: control segmentado profesional unificado ───────── */
+[data-testid="stMain"] [data-testid="stRadio"] div[role="radiogroup"] {
+  display: inline-flex !important;
+  flex-wrap: wrap !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 12px !important;
   padding: 4px !important;
-  gap: 2px !important;
-  box-shadow: none !important;
+  gap: 4px !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, .03) !important;
+  width: fit-content !important;
+  max-width: 100% !important;
 }
-[data-testid="stMain"] :is(.st-key-nba_grupo, [class*="st-key-nba_vista_"], .st-key-vivo_deporte, .st-key-f_grupo, [class*="st-key-f_vista_"]) [role="radiogroup"] label {
-  border-radius: 7px !important;
-  padding: .42rem .95rem !important;
+[data-testid="stMain"] [data-testid="stRadio"] div[role="radiogroup"] label[data-baseweb="radio"] {
+  margin: 0 !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
   background: transparent !important;
+  background-image: none !important;
+  border: 1px solid transparent !important;
   box-shadow: none !important;
   transform: none !important;
-  font-weight: 500;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease !important;
+  cursor: pointer !important;
 }
-[data-testid="stMain"] :is(.st-key-nba_grupo, [class*="st-key-nba_vista_"], .st-key-vivo_deporte, .st-key-f_grupo, [class*="st-key-f_vista_"]) [role="radiogroup"] label:hover {
-  background: rgba(255,255,255,.72) !important;
+[data-testid="stMain"] [data-testid="stRadio"] div[role="radiogroup"] label[data-baseweb="radio"]:hover {
+  background: rgba(255, 255, 255, .75) !important;
 }
-[data-testid="stMain"] :is(.st-key-nba_grupo, [class*="st-key-nba_vista_"], .st-key-vivo_deporte, .st-key-f_grupo, [class*="st-key-f_vista_"]) [role="radiogroup"] label:has(input:checked) {
-  background: #fff !important;
-  box-shadow: 0 1px 3px rgba(19,10,63,.12), 0 0 0 1px rgba(19,10,63,.05) !important;
+[data-testid="stMain"] [data-testid="stRadio"] div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 2px 6px -1px rgba(15, 23, 42, .08), 0 1px 2px rgba(15, 23, 42, .04) !important;
 }
-[data-testid="stMain"] :is(.st-key-nba_grupo, [class*="st-key-nba_vista_"], .st-key-vivo_deporte, .st-key-f_grupo, [class*="st-key-f_vista_"]) [role="radiogroup"] label * {
-  color: var(--pl-texto) !important;
+[data-testid="stMain"] [data-testid="stRadio"] div[role="radiogroup"] label[data-baseweb="radio"] * {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-size: .85rem !important;
+  font-weight: 500 !important;
 }
-[data-testid="stMain"] :is(.st-key-nba_grupo, [class*="st-key-nba_vista_"], .st-key-vivo_deporte, .st-key-f_grupo, [class*="st-key-f_vista_"]) [role="radiogroup"] label:has(input:checked) * {
-  color: var(--pl-ink) !important;
-  font-weight: 700;
+[data-testid="stMain"] [data-testid="stRadio"] div[role="radiogroup"] label[data-baseweb="radio"]:hover * {
+  color: #0F172A !important;
+  -webkit-text-fill-color: #0F172A !important;
+}
+[data-testid="stMain"] [data-testid="stRadio"] div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) * {
+  color: #4338CA !important;
+  -webkit-text-fill-color: #4338CA !important;
+  font-weight: 700 !important;
 }
 
 /* ───────── Pestañas ───────── */
