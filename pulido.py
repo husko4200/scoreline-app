@@ -1265,8 +1265,13 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   gap: 10px;
   max-height: 330px;
   overflow-y: auto;
-  padding: 8px 4px;
+  padding: 10px 8px;
   margin-bottom: 10px;
+  background: #0D0A26;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, .2);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, .4) transparent;
 }
 .sl-ai-row { display: flex; align-items: flex-end; gap: 8px; }
 .sl-ai-row.user { justify-content: flex-end; }
@@ -1285,16 +1290,18 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   font-size: .88rem;
   line-height: 1.45;
   white-space: pre-wrap;
+  animation: sl-bubble-in .22s cubic-bezier(.2,.8,.2,1) both;
 }
+@keyframes sl-bubble-in { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: none; } }
 .sl-ai-bubble.user {
   background: #4F46E5;
   color: #FFFFFF;
   border-bottom-right-radius: 4px;
 }
 .sl-ai-bubble.bot {
-  background: #F8FAFC;
-  color: #0F172A;
-  border: 1px solid #E2E8F0;
+  background: #1E1B4B;
+  color: #E2E8F0;
+  border: 1px solid rgba(99, 102, 241, .28);
   border-bottom-left-radius: 4px;
 }
 .sl-ai-welcome {
@@ -1302,8 +1309,12 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 18px 14px 14px;
-  gap: 10px;
+  padding: 24px 14px 20px;
+  gap: 12px;
+  background: #0D0A26;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, .2);
+  margin-bottom: 10px;
 }
 .sl-ai-welcome-img {
   width: 112px;
@@ -1313,7 +1324,7 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
 }
 .sl-ai-welcome-txt {
   max-width: 440px;
-  color: #475569;
+  color: #94A3B8;
   font-size: .88rem;
   line-height: 1.45;
 }

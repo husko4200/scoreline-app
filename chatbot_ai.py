@@ -10,7 +10,33 @@ from __future__ import annotations
 import base64
 from datetime import date
 import hashlib
-from html import escape as _esc
+import re as _re
+
+
+def _md_simple(txt: str) -> str:
+    """Convierte Markdown muy básico (negrita, listas) a HTML seguro."""
+    txt = _esc(txt)
+    # **negrita**
+    txt = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", txt)
+    # líneas de lista (- item)
+    lines = txt.split("\n")
+    out, in_ul = [], False
+    for ln in lines:
+        m = _re.match(r"^[-•]\s+(.+)$", ln)
+        if m:
+            if not in_ul:
+                out.append("<ul style='margin:.35em 0 .35em 1em;padding:0;list-style:disc'>")
+                in_ul = True
+            out.append(f"<li>{m.group(1)}</li>")
+        else:
+            if in_ul:
+                out.append("</ul>")
+                in_ul = False
+            if ln.strip():
+                out.append(f"<span>{ln}</span><br>")
+    if in_ul:
+        out.append("</ul>")
+    return "".join(out).rstrip("<br>")
 import json
 import os
 import threading
@@ -311,10 +337,17 @@ def modal_chat(seccion_actual: str = "") -> None:
                 burbujas.append(
                     f'<div class="sl-ai-row bot">'
                     f'<img class="sl-ai-msg-av" src="{av_src}" alt="">'
-                    f'<div class="sl-ai-bubble bot">{_esc(m["content"])}</div>'
+                    f'<div class="sl-ai-bubble bot">{_md_simple(m["content"])}</div>'
                     f'</div>'
                 )
-        chat_body_html = f'<div class="sl-ai-msgs">{"".join(burbujas)}</div>'
+        # Ancla al final para scroll automático
+        burbujas.append('<div id="sl-ai-msgs-end" style="height:1px;"></div>')
+        chat_body_html = (
+            f'<div class="sl-ai-msgs" id="sl-ai-msgs-box">{"".join(burbujas)}</div>'
+            '<script>(function(){var b=document.getElementById("sl-ai-msgs-box");'
+            'if(b){var e=b.querySelector("#sl-ai-msgs-end");if(e)e.scrollIntoView({behavior:"smooth"});'
+            'else b.scrollTop=b.scrollHeight;}})()</script>'
+        )
     else:
         chat_body_html = (
             '<div class="sl-ai-welcome">'
