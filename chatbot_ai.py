@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import base64
-from datetime import date
+from datetime import date, datetime
 import hashlib
 from html import escape as _esc
 import re as _re
@@ -40,7 +40,14 @@ import streamlit.components.v1 as _comp
 
 import planes
 
-LIMITE_GRATIS_DIA = 3
+LIMITE_GRATIS_DIA = 1
+
+
+def consultas_restantes_hoy() -> int | None:
+    """Devuelve cuántas consultas gratis quedan hoy, o None si el usuario es Pro."""
+    if planes.es_pro():
+        return None
+    return max(0, LIMITE_GRATIS_DIA - consultas_usadas_hoy())
 
 _CARPETA = os.path.dirname(os.path.abspath(__file__))
 _PROMPT_PATH = os.path.join(_CARPETA, "scoreline-ai-system-prompt.md")
@@ -164,8 +171,13 @@ def _incrementar_uso_hoy() -> int:
 # ---------------------------------------------------------------------------
 # Contexto real <datos_app>
 # ---------------------------------------------------------------------------
+def _limpiar_seccion(seccion: str) -> str:
+    txt = _re.sub(r"[^\w\sáéíóúÁÉÍÓÚñÑ·-]", "", str(seccion or "")).strip()
+    return txt or "Inicio"
+
+
 def _construir_datos_app(seccion: str) -> str:
-    lineas = [f"Sección activa: {seccion or 'Inicio'}", f"Fecha actual: {date.today().isoformat()}"]
+    lineas = [f"Sección activa: {_limpiar_seccion(seccion)}", f"Fecha actual: {date.today().isoformat()}"]
     try:
         import inicio
         _, partidos = inicio._resumen_dia()
@@ -367,12 +379,12 @@ def _respuesta_local_datos(pregunta: str, seccion: str) -> str:
         lineas.append("Son estimaciones basadas en forma reciente y rendimiento local/visita, nunca resultados seguros.")
         return "\n".join(lineas)
 
-    # 6. Resumen general del día
-    sec_txt = seccion or "Inicio"
+    # 6. Saludo / resumen general del día (sin emojis ni cifras técnicas frías)
+    sec_txt = _limpiar_seccion(seccion)
     return (
-        f"En **{sec_txt}** tengo **{len(partidos)}** partidos en la jornada de hoy "
-        f"(**{len(en_vivo)}** en vivo y **{len(programados)}** programados). "
-        "Puedes preguntarme por un equipo específico, por los partidos en vivo o por los favoritos según nuestras estimaciones."
+        f"Estoy revisando **{sec_txt}** en tiempo real. "
+        f"Ahora hay **{len(en_vivo)}** encuentro(s) en vivo y **{len(programados)}** próximos en cartelera. "
+        "Dime qué equipo, jugador o probabilidad quieres analizar."
     )
 
 
@@ -477,10 +489,55 @@ def _llamar_ia(pregunta: str, historial: list[dict[str, str]], datos_app: str, s
 
 
 # ---------------------------------------------------------------------------
-# Diálogo UI de ScoreLine AI
+# Panel lateral flotante UI de ScoreLine AI
 # ---------------------------------------------------------------------------
-@st.dialog("ScoreLine AI", width="large")
-def modal_chat(seccion_actual: str = "") -> None:
+def _render_mensajes_html(
+    msgs: list[dict[str, str]],
+    av_src: str,
+    mascot_src: str,
+    escribiendo: bool = False,
+) -> str:
+    if not msgs and not escribiendo:
+        return (
+            '<div class="sl-ai-welcome">'
+            '<div class="sl-ai-bot-stage">'
+            '<div class="sl-ai-bot-aura"></div>'
+            f'<img class="sl-ai-welcome-img" src="{mascot_src}" alt="ScoreLine AI">'
+            '</div>'
+            '<div class="sl-ai-welcome-title">¡Hola! Soy ScoreLine AI</div>'
+            '<div class="sl-ai-welcome-txt">Tu asistente de análisis deportivo. Elige una sugerencia o pregúntame por cualquier partido.</div>'
+            '</div>'
+        )
+    burbujas = []
+    for m in msgs:
+        hora = _esc(m.get("ts", ""))
+        hora_html = f'<div class="sl-ai-time">{hora}</div>' if hora else ""
+        if m["role"] == "user":
+            burbujas.append(
+                f'<div class="sl-ai-row user">'
+                f'<div class="sl-ai-bwrap user"><div class="sl-ai-bubble user">{_esc(m["content"])}</div>{hora_html}</div>'
+                f'</div>'
+            )
+        else:
+            burbujas.append(
+                f'<div class="sl-ai-row bot">'
+                f'<img class="sl-ai-msg-av" src="{av_src}" alt="">'
+                f'<div class="sl-ai-bwrap bot"><div class="sl-ai-bubble bot">{_md_simple(m["content"])}</div>{hora_html}</div>'
+                f'</div>'
+            )
+    if escribiendo:
+        burbujas.append(
+            f'<div class="sl-ai-row bot">'
+            f'<img class="sl-ai-msg-av" src="{av_src}" alt="">'
+            f'<div class="sl-ai-bwrap bot"><div class="sl-ai-bubble bot sl-ai-typing-box">'
+            f'<span class="sl-ai-typing"><span></span><span></span><span></span></span>'
+            f'<span class="sl-ai-typing-lbl">Analizando…</span>'
+            f'</div></div></div>'
+        )
+    return f'<div class="sl-ai-msgs" id="sl-ai-msgs-box">{"".join(burbujas)}</div>'
+
+
+def panel_chat(seccion_actual: str = "") -> None:
     es_pro = planes.es_pro()
     usadas = 0 if es_pro else consultas_usadas_hoy()
     bloqueado = (not es_pro) and (usadas >= LIMITE_GRATIS_DIA)
@@ -491,121 +548,113 @@ def modal_chat(seccion_actual: str = "") -> None:
     mascot_src = f"data:image/png;base64,{mascot_b64}" if mascot_b64 else av_src
 
     restantes = max(0, LIMITE_GRATIS_DIA - usadas)
-    badge_txt = "Pro · Ilimitado" if es_pro else f"Gratis · {restantes}/{LIMITE_GRATIS_DIA} hoy"
-    badge_cls = "is-pro" if es_pro else ("is-empty" if bloqueado else "is-free")
-
-    st.markdown(
-        f'<div class="sl-ai-head">'
-        f'<div class="sl-ai-head-av-wrap"><img class="sl-ai-head-ico" src="{av_src}" alt="ScoreLine AI"><span class="sl-ai-online-dot"></span></div>'
-        f'<div class="sl-ai-head-info">'
-        f'<div class="sl-ai-title">ScoreLine AI</div>'
-        f'<div class="sl-ai-sub">Analista deportivo en tiempo real</div>'
-        f'</div>'
-        f'<span class="sl-ai-badge {badge_cls}">{_esc(badge_txt)}</span>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    if es_pro:
+        badge_txt, badge_cls = "Pro · Ilimitado", "is-pro"
+    elif restantes == 1:
+        badge_txt, badge_cls = "1 pregunta gratis hoy", "is-free"
+    else:
+        badge_txt, badge_cls = "0 gratis hoy", "is-empty"
 
     if "sl_ai_msgs" not in st.session_state:
         st.session_state["sl_ai_msgs"] = []
     msgs: list[dict[str, str]] = st.session_state["sl_ai_msgs"]
 
-    # Construir historial HTML en una sola línea limpia (sin <script> ni saltos que rompan flex)
-    if msgs:
-        burbujas = []
-        for m in msgs:
-            if m["role"] == "user":
-                burbujas.append(f'<div class="sl-ai-row user"><div class="sl-ai-bubble user">{_esc(m["content"])}</div></div>')
-            else:
-                burbujas.append(
-                    f'<div class="sl-ai-row bot">'
-                    f'<img class="sl-ai-msg-av" src="{av_src}" alt="">'
-                    f'<div class="sl-ai-bubble bot">{_md_simple(m["content"])}</div>'
-                    f'</div>'
-                )
-        chat_body_html = f'<div class="sl-ai-msgs" id="sl-ai-msgs-box">{"".join(burbujas)}</div>'
-    else:
-        chat_body_html = (
-            '<div class="sl-ai-welcome">'
-            '<div class="sl-ai-bot-stage">'
-            '<div class="sl-ai-bot-aura"></div>'
-            f'<img class="sl-ai-welcome-img" src="{mascot_src}" alt="ScoreLine AI">'
-            '</div>'
-            '<div class="sl-ai-welcome-title">¿Qué partido analizamos hoy?</div>'
-            '<div class="sl-ai-welcome-txt">Pregúntame por partidos en vivo, probabilidades de ScoreLine, forma reciente o cómo leer cada métrica.</div>'
-            '</div>'
-        )
-
-    if bloqueado:
-        st.markdown(
-            f'<div class="sl-ai-blur-stage">'
-            f'<div class="sl-ai-blurred-bg">{chat_body_html}</div>'
-            f'<div class="sl-ai-glass-overlay">'
-            '<div class="sl-ai-bot-stage is-compact">'
-            '<div class="sl-ai-bot-aura"></div>'
-            f'<img class="sl-ai-glass-bot" src="{mascot_src}" alt="ScoreLine AI">'
-            '</div>'
-            f'<div class="sl-ai-glass-title">Alcanzaste tus {LIMITE_GRATIS_DIA} consultas gratis de hoy</div>'
-            f'<div class="sl-ai-glass-sub">Pasa a ScoreLine Pro para preguntar sin límites sobre todos los partidos, rachas y métricas.</div>'
+    with st.container(key="sl_ai_drawer"):
+        # Cabecera única: robot + punto verde + título + badge + Nuevo chat (icono) + Cerrar (icono)
+        c_head, c_rst, c_cls = st.columns([6.4, 0.9, 0.9], vertical_alignment="center")
+        c_head.markdown(
+            f'<div class="sl-ai-head">'
+            f'<div class="sl-ai-head-av-wrap"><img class="sl-ai-head-ico" src="{av_src}" alt="ScoreLine AI"><span class="sl-ai-online-dot"></span></div>'
+            f'<div class="sl-ai-head-info">'
+            f'<div class="sl-ai-title">ScoreLine AI <span class="sl-ai-online-txt">En línea</span></div>'
+            f'<span class="sl-ai-badge {badge_cls}">{_esc(badge_txt)}</span>'
             f'</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
-        if st.button("★ Pasar a Pro", type="primary", key="sl_ai_go_pro", use_container_width=True):
-            st.session_state["_abrir_modal_pro"] = "Desbloquea consultas ilimitadas con ScoreLine AI."
-            st.rerun()
-        return
-
-    st.markdown(chat_body_html, unsafe_allow_html=True)
-
-    if msgs:
-        _comp.html(
-            '<script>try{var b=window.parent.document.getElementById("sl-ai-msgs-box");'
-            'if(b)b.scrollTo({top:b.scrollHeight,behavior:"smooth"});}catch(e){}</script>',
-            height=0,
-            width=0,
-        )
-
-    # Sugerencias rápidas cuando el chat está vacío
-    pregunta_chip = None
-    if not msgs:
-        sugs = [
-            "¿Qué partidos hay en vivo ahora?",
-            "¿Quién es favorito hoy según la app?",
-            "¿Cómo interpreto las métricas?",
-        ]
-        cols_s = st.columns(3, gap="small")
-        for idx, sug in enumerate(sugs):
-            if cols_s[idx].button(sug, key=f"sl_ai_sug_{idx}", use_container_width=True):
-                pregunta_chip = sug
-
-    with st.form("sl_ai_form", clear_on_submit=True):
-        c_inp, c_btn = st.columns([4.4, 1.1], vertical_alignment="center")
-        texto = c_inp.text_input(
-            "Mensaje",
-            placeholder="Escribe tu pregunta sobre un equipo, partido o métrica...",
-            label_visibility="collapsed",
-            key="sl_ai_input",
-        )
-        enviado = c_btn.form_submit_button("Enviar", type="primary", use_container_width=True)
-
-    # Barra de acciones debajo del formulario
-    if msgs:
-        _c_clear, _ = st.columns([1.2, 3])
-        if _c_clear.button("↺ Nuevo chat", key="sl_ai_clear", type="tertiary"):
-            st.session_state["sl_ai_msgs"] = []
-            st.session_state["_sl_ai_open"] = True
+        if msgs and not bloqueado:
+            if c_rst.button("↺", key="sl_ai_clear", help="Nuevo chat", use_container_width=True):
+                st.session_state["sl_ai_msgs"] = []
+                st.rerun()
+        if c_cls.button("✕", key="sl_ai_close", help="Cerrar asistente", use_container_width=True):
+            st.session_state["_sl_ai_drawer_open"] = False
             st.rerun()
 
-    pregunta = (pregunta_chip or (texto if enviado else "")).strip()
-    if pregunta:
-        datos = _construir_datos_app(seccion_actual)
-        with st.spinner("Analizando datos de ScoreLine..."):
-            ok, resp = _llamar_ia(pregunta, msgs, datos, seccion_actual)
-        msgs.append({"role": "user", "content": pregunta})
-        msgs.append({"role": "assistant", "content": resp})
-        if ok and not es_pro:
-            _incrementar_uso_hoy()
-        st.session_state["_sl_ai_open"] = True
-        st.rerun()
+        chat_body_html = _render_mensajes_html(msgs, av_src, mascot_src)
+
+        if bloqueado:
+            st.markdown(
+                f'<div class="sl-ai-blur-stage">'
+                f'<div class="sl-ai-blurred-bg">{chat_body_html}</div>'
+                f'<div class="sl-ai-glass-overlay">'
+                '<div class="sl-ai-bot-stage is-compact">'
+                '<div class="sl-ai-bot-aura"></div>'
+                f'<img class="sl-ai-glass-bot" src="{mascot_src}" alt="ScoreLine AI">'
+                '</div>'
+                f'<div class="sl-ai-glass-title">Ya usaste tu pregunta gratis de hoy</div>'
+                f'<div class="sl-ai-glass-sub">Pasa a Pro para seguir analizando partidos, rachas y probabilidades sin límites.</div>'
+                f'</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button("★ Pasar a Pro", key="sl_ai_go_pro", use_container_width=True):
+                st.session_state["_sl_ai_drawer_open"] = False
+                st.session_state["_abrir_modal_pro"] = "Desbloquea consultas ilimitadas con ScoreLine AI."
+                st.rerun()
+            st.markdown('<div class="sl-ai-foot">ScoreLine AI analiza datos y no recomienda apuestas.</div>', unsafe_allow_html=True)
+            return
+
+        zona_chat = st.empty()
+        zona_chat.markdown(chat_body_html, unsafe_allow_html=True)
+
+        if msgs:
+            _comp.html(
+                '<script>try{var b=window.parent.document.getElementById("sl-ai-msgs-box");'
+                'if(b)b.scrollTo({top:b.scrollHeight,behavior:"smooth"});}catch(e){}</script>',
+                height=0,
+                width=0,
+            )
+
+        # Sugerencias rápidas cuando el chat está vacío
+        pregunta_chip = None
+        if not msgs:
+            sugs = [
+                "¿Quién es favorito hoy?",
+                "Partidos en vivo",
+                "Explícame una probabilidad",
+            ]
+            for idx, sug in enumerate(sugs):
+                if st.button(sug, key=f"sl_ai_sug_{idx}", use_container_width=True):
+                    pregunta_chip = sug
+
+        with st.form("sl_ai_form", clear_on_submit=True):
+            c_inp, c_btn = st.columns([6.0, 1.0], vertical_alignment="center")
+            texto = c_inp.text_input(
+                "Mensaje",
+                placeholder="Pregunta sobre un partido o métrica…",
+                label_visibility="collapsed",
+                key="sl_ai_input",
+            )
+            enviado = c_btn.form_submit_button("➤", use_container_width=True)
+
+        st.markdown('<div class="sl-ai-foot">ScoreLine AI analiza datos y no recomienda apuestas.</div>', unsafe_allow_html=True)
+
+        pregunta = (pregunta_chip or (texto if enviado else "")).strip()
+        if pregunta:
+            ahora = datetime.now().strftime("%H:%M")
+            msgs.append({"role": "user", "content": pregunta, "ts": ahora})
+            # Mostrar burbuja del usuario + indicador "escribiendo…" con 3 puntos
+            zona_chat.markdown(
+                _render_mensajes_html(msgs, av_src, mascot_src, escribiendo=True),
+                unsafe_allow_html=True,
+            )
+            datos = _construir_datos_app(seccion_actual)
+            ok, resp = _llamar_ia(pregunta, msgs[:-1], datos, seccion_actual)
+            msgs.append({"role": "assistant", "content": resp, "ts": datetime.now().strftime("%H:%M")})
+            if ok and not es_pro:
+                _incrementar_uso_hoy()
+            st.rerun()
+
+
+modal_chat = panel_chat
 

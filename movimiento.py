@@ -114,10 +114,21 @@ div[role="radiogroup"] label:has(input:checked) { animation: pl-pop .32s cubic-b
 .pl-dock button:active { transform: scale(.92); }
 .pl-dock button:focus-visible { outline: 2px solid var(--pl-acc, #4F46E5); outline-offset: 1px; }
 .pl-dock button.off { opacity: .45; filter: grayscale(1); }
-.pl-dock button.sl-ai-btn { width: 42px; height: 42px; border-radius: 50%; padding: 0; background: linear-gradient(135deg, #2E1F7A, #4F46E5); box-shadow: 0 4px 14px -2px rgba(79, 70, 229, .55), 0 0 0 2px rgba(94, 234, 212, .55); overflow: hidden; animation: sl-ai-pulse 2.8s ease-in-out infinite; }
-@keyframes sl-ai-pulse { 0%, 100% { box-shadow: 0 4px 14px -2px rgba(79,70,229,.55), 0 0 0 2px rgba(94,234,212,.55); } 50% { box-shadow: 0 4px 18px -2px rgba(79,70,229,.8), 0 0 0 4px rgba(94,234,212,.35), 0 0 20px 4px rgba(99,102,241,.25); } }
-.pl-dock button.sl-ai-btn:hover { background: linear-gradient(135deg, #3730A3, #6366F1); transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 20px -2px rgba(79, 70, 229, .65), 0 0 0 2.5px #5EEAD4; animation: none; }
+.pl-dock button.sl-ai-btn { position: relative; width: 44px; height: 44px; border-radius: 50%; padding: 0; background: linear-gradient(135deg, #1E1B4B, #312E81); box-shadow: 0 4px 14px -2px rgba(45, 212, 191, .45), 0 0 0 2px rgba(94, 234, 212, .75); overflow: visible; animation: sl-ai-halo-green 2.4s ease-in-out infinite; }
+@keyframes sl-ai-halo-green {
+  0%, 100% { box-shadow: 0 4px 14px -2px rgba(45, 212, 191, .45), 0 0 0 2px rgba(94, 234, 212, .75), 0 0 0 0 rgba(45, 212, 191, .50); }
+  50%      { box-shadow: 0 6px 20px -2px rgba(45, 212, 191, .70), 0 0 0 2.5px #5EEAD4, 0 0 0 9px rgba(45, 212, 191, 0); }
+}
+html:has([class*="st-key-sl_ai_drawer"]) .pl-dock button.sl-ai-btn {
+  animation: none !important;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, .45), 0 0 0 2px rgba(148, 163, 184, .35) !important;
+}
+.pl-dock button.sl-ai-btn:hover { background: linear-gradient(135deg, #312E81, #4F46E5); transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 20px -2px rgba(45, 212, 191, .6), 0 0 0 2.5px #5EEAD4; }
 .pl-dock button.sl-ai-btn img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.sl-ai-dock-badge { position: absolute; -webkit-font-smoothing: antialiased; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #10B981; color: #042F2E; font-size: .68rem; font-weight: 800; line-height: 18px; text-align: center; border: 2px solid #0D0A26; box-shadow: 0 2px 6px rgba(0,0,0,.45); pointer-events: none; }
+.sl-ai-dock-badge.is-zero { background: #F59E0B; color: #111827; }
+.sl-ai-dock-badge.is-hide { display: none; }
+@media (max-width: 640px) { html:has([class*="st-key-sl_ai_drawer"]) .pl-dock { opacity: 0; pointer-events: none; } }
 .pl-dock button.sube { height: 0; width: 38px; opacity: 0; pointer-events: none; overflow: hidden; margin-top: -6px; }
 .pl-dock button.sube.ver { height: 36px; opacity: 1; pointer-events: auto; margin-top: 0; }
 #pl-toasts { position: fixed; left: 18px; bottom: 18px; z-index: 1000002; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
@@ -363,6 +374,15 @@ _JS = r"""
   } else {
     bAi.textContent = 'AI';
   }
+  const badgeAi = D.createElement('span');
+  badgeAi.className = 'sl-ai-dock-badge';
+  function pintarBadgeAi(val) {
+    if (!val) { badgeAi.className = 'sl-ai-dock-badge is-hide'; badgeAi.textContent = ''; }
+    else { badgeAi.className = 'sl-ai-dock-badge' + (val === '0' ? ' is-zero' : ''); badgeAi.textContent = val; }
+  }
+  D.body.dataset.slAiBadge = '__AI_BADGE__';
+  pintarBadgeAi('__AI_BADGE__');
+  bAi.appendChild(badgeAi);
   bAi.onclick = () => {
     sonar('click');
     const trig = D.querySelector('[class*="st-key-sl_ai_open_btn"] button');
@@ -608,5 +628,19 @@ def _robot_avatar_uri() -> str:
 
 def aplicar(seccion=None, indice: int = 0):
     """Inyecta el CSS (en cada ejecución) y el script (una sola vez; el propio script evita duplicarse)."""
+    badge_txt = ""
+    try:
+        import chatbot_ai
+        rest = chatbot_ai.consultas_restantes_hoy()
+        badge_txt = "" if rest is None else str(rest)
+    except Exception:  # noqa: BLE001
+        badge_txt = ""
     st.markdown(_CSS.replace("__IDX__", str(int(indice))), unsafe_allow_html=True)
-    components.html(_JS.replace("__ROBOT_AVATAR_URI__", _robot_avatar_uri()), height=0)
+    js_out = _JS.replace("__ROBOT_AVATAR_URI__", _robot_avatar_uri()).replace("__AI_BADGE__", badge_txt)
+    components.html(js_out, height=0)
+    components.html(
+        f"<script>try{{var d=window.parent.document,b=d.querySelector('.sl-ai-dock-badge');"
+        f"if(b){{var v='{badge_txt}';if(!v){{b.className='sl-ai-dock-badge is-hide';b.textContent='';}}"
+        f"else{{b.className='sl-ai-dock-badge'+(v==='0'?' is-zero':'');b.textContent=v;}}}}}}catch(e){{}}</script>",
+        height=0,
+    )

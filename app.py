@@ -475,11 +475,11 @@ _motivo_pro = st.session_state.pop("_abrir_modal_pro", None)
 if _motivo_pro:
     planes.modal_pro(_motivo_pro)
 
-# Botón oculto que dispara el diálogo de ScoreLine AI desde el dock flotante
-_abrir_ai_btn = st.button("ScoreLine AI", key="sl_ai_open_btn")
-_abrir_ai_estado = st.session_state.pop("_sl_ai_open", False)
-if (_abrir_ai_btn or _abrir_ai_estado) and not _motivo_pro:
-    chatbot_ai.modal_chat(seccion)
+# Botón oculto que alterna el panel lateral de ScoreLine AI desde el dock flotante
+if st.button("ScoreLine AI", key="sl_ai_open_btn") and not _motivo_pro:
+    st.session_state["_sl_ai_drawer_open"] = not st.session_state.get("_sl_ai_drawer_open", False)
+if st.session_state.get("_sl_ai_drawer_open", False) and not _motivo_pro:
+    chatbot_ai.panel_chat(seccion)
 
 # Si es administrador, mostrar panel de gestión de clientes al inicio
 if auth.es_admin():
