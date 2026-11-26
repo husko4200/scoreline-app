@@ -179,6 +179,8 @@ def uid_actual() -> str | None:
 
 def obtener_plan(uid: str | None = None) -> str:
     """Retorna 'pro' o 'gratis'. Visitante sin sesión siempre es 'gratis'."""
+    if uid is None:
+        uid = uid_actual()
     uid = _normalizar_uid(uid)
     if not uid:
         return "gratis"

@@ -70,14 +70,36 @@ def _admin_defecto() -> dict:
     }
 
 
+def _pro_demo() -> dict:
+    salt = _generar_salt()
+    return {
+        "nombre": "Cuenta Pro Demo",
+        "email": "pro@scoreline.app",
+        "salt": salt,
+        "password_hash": _hashear("ScoreLine2026!", salt),
+        "rol": "pro",
+        "plan": "pro",
+        "activo": True,
+        "vence": None,
+        "creado": str(date.today()),
+    }
+
+
 def _cargar_usuarios_local() -> dict:
     if not os.path.exists(ARCHIVO_USUARIOS):
-        usuarios_defecto = {"admin@deporte.com": _admin_defecto()}
+        usuarios_defecto = {
+            "admin@deporte.com": _admin_defecto(),
+            "pro@scoreline.app": _pro_demo(),
+        }
         _guardar_usuarios_local(usuarios_defecto)
         return usuarios_defecto
     try:
         with open(ARCHIVO_USUARIOS, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+        if "pro@scoreline.app" not in data:
+            data["pro@scoreline.app"] = _pro_demo()
+            _guardar_usuarios_local(data)
+        return data
     except (OSError, ValueError):
         return {}
 
@@ -137,6 +159,10 @@ def _obtener_usuario(email: str) -> dict | None:
                 adm = _admin_defecto()
                 db.collection("usuarios").document(email).set(adm, merge=True)
                 return adm
+            if email == "pro@scoreline.app":
+                pro_u = _pro_demo()
+                db.collection("usuarios").document(email).set(pro_u, merge=True)
+                return pro_u
             return None
         except Exception:
             pass
