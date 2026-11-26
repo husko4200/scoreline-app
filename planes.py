@@ -454,7 +454,7 @@ def insignia_sidebar():
         return
     st.sidebar.markdown(
         '<div class="sl-sb-pro-card">'
-        '<div class="sl-sb-pro-head">★ ScoreLine Pro</div>'
+        '<div class="sl-sb-pro-head"><span data-icon="pro" data-size="14" style="display:inline-flex;vertical-align:middle;margin-right:4px;"></span>ScoreLine Pro</div>'
         '<div class="sl-sb-pro-list">'
         '<div class="sl-sb-pro-item"><span class="sl-sb-pro-dot">✓</span><span>Proyecciones exactas</span></div>'
         '<div class="sl-sb-pro-item"><span class="sl-sb-pro-dot">✓</span><span>Líneas recomendadas</span></div>'

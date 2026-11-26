@@ -367,13 +367,13 @@ def panel():
     """Panel «🔔 Alertas» del menú lateral + vigilancia en segundo plano (solo ScoreLine Pro)."""
     import planes
     if not planes.es_pro():
-        with st.sidebar.expander("🔒 Notificaciones (Pro)", expanded=False):
+        with st.sidebar.expander("Notificaciones (Pro)", expanded=False):
             st.caption("Las alertas y notificaciones en vivo de tus favoritos son exclusivas de ScoreLine Pro.")
             if st.button("Desbloquear notificaciones", key="al_unlock_pro", use_container_width=True):
                 planes.modal_pro("Activa ScoreLine Pro para recibir alertas de partidos, lesiones y líneas.")
         return
     cfg = cargar_config()
-    with st.sidebar.expander("🔔 Alertas de favoritos", expanded=False):
+    with st.sidebar.expander("Alertas de favoritos", expanded=False):
         st.toggle("Partido por empezar", cfg["partido"], key="al_partido", on_change=_guardar_config)
         opciones_mins = [10, 15, 30, 45, 60]
         idx = opciones_mins.index(cfg["minutos"]) if cfg["minutos"] in opciones_mins else 1

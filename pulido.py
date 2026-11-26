@@ -547,6 +547,19 @@ body .stApp [data-testid="stMain"] .stButton > button[kind="primary"] * {
   text-align: left !important;
   justify-content: flex-start !important;
   width: 100% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+svg.sl-icon {
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
   background: rgba(255,255,255,.08) !important;

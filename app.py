@@ -239,27 +239,24 @@ if st.session_state.get("seccion") not in SECCIONES:
 if st.session_state.get("seccion") == DIAGNOSTICO and not auth.es_admin():
     st.session_state["seccion"] = INICIO
 
-# Navegación por botones nativos (sin radio circle). Cada botón tiene la clase sl-nav-btn
-# y sl-nav-btn--active cuando es la sección actual, manejadas en pulido.py.
+# Navegación por botones nativos (sin radio circle). Los iconos SVG se montan con ScoreLineIcons.
 _ICONS_NAV = {
-    INICIO:   "🏠",
-    VIVO:     "📡",
-    EXPECTED: "🎯",
-    NBA:      "🏀",
-    FUTBOL:   "⚽",
-    TENIS:    "🎾",
+    INICIO:   "inicio",
+    VIVO:     "en-vivo",
+    EXPECTED: "top-expected",
+    NBA:      "nba",
+    FUTBOL:   "futbol",
+    TENIS:    "tenis",
 }
 seccion = st.session_state.get("seccion", INICIO)
 _nav_changed = False
 for _sec in _SECCIONES_NAV:
     _label = _ETIQUETAS_MENU.get(_sec, _sec)
-    _icon  = _ICONS_NAV.get(_sec, "")
     _is_active = (seccion == _sec)
     _btn_key = f"_nav_btn_{_sec}"
-    # Render con st.sidebar.markdown para controlar clase CSS; el click se detecta con st.sidebar.button oculto
     _btn_type = "primary" if _is_active else "secondary"
     if st.sidebar.button(
-        f"{_icon}  {_label}",
+        _label,
         key=_btn_key,
         use_container_width=True,
         type=_btn_type,
@@ -301,6 +298,77 @@ efectos.aplicar(estilo)  # colores por deporte + animaciones
 pulido.aplicar(estilo)   # identidad visual ScoreLine unificada (no toca las tablas)
 movimiento.aplicar(estilo, list(SECCIONES).index(seccion))  # animaciones, interacciones y sonido (va al último)
 _auto_abrir_sidebar_escritorio()
+_comp.html(
+    """<script>
+(function() {
+  try {
+    var P = window.parent;
+    if (!P || !P.document) return;
+    var paths = {
+      "alertas": '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.8 2H4.2z"/><path d="M12 3.2v1.6M10 21.2a2.2 2.2 0 0 0 4 0"/>',
+      "datos": '<path d="M12 3l7.5 2.8V12c0 4.2-3.1 7-7.5 9-4.4-2-7.5-4.8-7.5-9V5.8z"/><path d="M8.8 12.2l2.4 2.4 4.2-4.6"/>',
+      "en-vivo": '<circle cx="12" cy="12" r="1.9" fill="currentColor"/><path d="M8 8a5.7 5.7 0 0 0 0 8M16 8a5.7 5.7 0 0 1 0 8M5 5a9.9 9.9 0 0 0 0 14M19 5a9.9 9.9 0 0 1 0 14"/>',
+      "futbol": '<circle cx="12" cy="12" r="9"/><polygon points="12.00,8.70 15.14,10.98 13.94,14.67 10.06,14.67 8.86,10.98" fill="currentColor"/><path d="M12.00 8.70L12.00 3.00"/><path d="M15.14 10.98L20.56 9.22"/><path d="M13.94 14.67L17.29 19.28"/><path d="M10.06 14.67L6.71 19.28"/><path d="M8.86 10.98L3.44 9.22"/>',
+      "inicio": '<path d="M3.5 11.2L12 4l8.5 7.2"/><path d="M5.8 9.8V19a1 1 0 0 0 1 1h3.4v-5.2h3.6V20h3.4a1 1 0 0 0 1-1V9.8"/>',
+      "nba": '<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><path d="M5.4 5.4C8.6 8.6 8.6 15.4 5.4 18.6M18.6 5.4C15.4 8.6 15.4 15.4 18.6 18.6"/>',
+      "pro": '<polygon points="12.00,3.20 14.35,9.36 20.94,9.70 15.80,13.84 17.53,20.20 12.00,16.60 6.47,20.20 8.20,13.84 3.06,9.70 9.65,9.36" fill="currentColor"/>',
+      "seguimiento": '<polyline points="2.5,12 7,12 10,5 14,19 17,12 21.5,12"/>',
+      "tenis": '<circle cx="12" cy="12" r="9"/><path d="M4.3 6.9C9.2 8.8 9.2 15.2 4.3 17.1M19.7 6.9C14.8 8.8 14.8 15.2 19.7 17.1"/>',
+      "top-expected": '<circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="4"/><circle cx="11" cy="13" r="1" fill="currentColor"/><path d="M11 13L20.5 3.5M16.5 3.5h4v4"/>'
+    };
+    function svg(name, size) {
+      size = size || 18;
+      var p = paths[name];
+      if (!p) return '';
+      return '<svg class="sl-icon" data-sl-icon="' + name + '" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+    }
+    P.ScoreLineIcons = { svg: svg, names: Object.keys(paths) };
+
+    var labelMap = {
+      "Inicio": "inicio",
+      "En vivo": "en-vivo",
+      "Top Expected": "top-expected",
+      "NBA": "nba",
+      "Fútbol": "futbol",
+      "Tenis": "tenis",
+      "Alertas de favoritos": "alertas",
+      "Notificaciones (Pro)": "alertas"
+    };
+
+    function mountAll() {
+      var doc = P.document;
+      doc.querySelectorAll('[data-icon]').forEach(function(el) {
+        var name = el.getAttribute('data-icon');
+        var sz = parseInt(el.getAttribute('data-size') || '18', 10);
+        if (!el.querySelector('svg[data-sl-icon="' + name + '"]')) {
+          el.innerHTML = svg(name, sz);
+        }
+      });
+      var targets = doc.querySelectorAll(
+        '[data-testid="stSidebar"] [class*="st-key-_nav_btn_"] button p, ' +
+        '[data-testid="stSidebar"] [data-testid="stExpander"] summary p'
+      );
+      targets.forEach(function(p) {
+        var txt = (p.textContent || '').trim();
+        var iconName = labelMap[txt];
+        if (!iconName) return;
+        var cur = p.querySelector('svg.sl-icon');
+        if (cur && cur.getAttribute('data-sl-icon') === iconName) return;
+        if (cur) cur.remove();
+        p.insertAdjacentHTML('afterbegin', svg(iconName, 18));
+      });
+    }
+
+    if (P.__slIconObs) P.__slIconObs.disconnect();
+    P.__slIconObs = new MutationObserver(mountAll);
+    P.__slIconObs.observe(P.document.body, { childList: true, subtree: true });
+    mountAll();
+  } catch (e) {}
+})();
+</script>""",
+    height=0,
+    width=0,
+)
 
 # Franja superior estable: PULSO EN VIVO con partidos y horarios reales
 try:
