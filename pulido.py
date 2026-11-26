@@ -307,10 +307,37 @@ html, body {
   backdrop-filter: none !important;
   min-width: 226px;
   max-width: 242px;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
 }
-[data-testid="stSidebar"] > div:first-child {
+[data-testid="stSidebar"] > div:first-child,
+[data-testid="stSidebarContent"] {
   background: #15103F !important;
   background-image: none !important;
+  height: 100% !important;
+  max-height: 100vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .28) transparent;
+}
+[data-testid="stSidebarContent"]::-webkit-scrollbar,
+[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar {
+  width: 6px;
+}
+[data-testid="stSidebarContent"]::-webkit-scrollbar-thumb,
+[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, .24);
+  border-radius: 999px;
+}
+[data-testid="stSidebarContent"]::-webkit-scrollbar-thumb:hover,
+[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, .42);
+}
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+  gap: 0.4rem !important;
 }
 [data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
   position: absolute !important;
