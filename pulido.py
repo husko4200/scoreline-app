@@ -2756,26 +2756,61 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   padding: 2px 10px;
   border-radius: 999px;
 }
+.sl-list-head {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 136px 72px;
+  gap: 12px;
+  padding: 6px 14px;
+  margin-bottom: 4px;
+  font-size: .71rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #64748B;
+}
 .sl-list-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 136px 72px;
   align-items: center;
   gap: 12px;
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
-  border-radius: 10px;
-  padding: 8px 12px;
+  border-radius: 12px;
+  padding: 9px 14px;
   margin-bottom: 6px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .03);
 }
 .sl-list-time {
-  min-width: 58px;
   font-size: .78rem;
   font-weight: 700;
-  color: #475569;
+  color: #334155;
   font-family: var(--pl-font-mono);
+  white-space: nowrap;
 }
-.sl-list-teams { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: .88rem; color: #0F172A; }
-.sl-list-scores { font-weight: 800; font-family: var(--pl-font-mono); color: #0F172A; text-align: right; min-width: 28px; }
+.sl-list-time.is-live { color: #E11D48; }
+.sl-list-time.is-post { color: #64748B; }
+.sl-list-teams { min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: .88rem; color: #0F172A; }
+.sl-list-teams > div { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sl-list-liga {
+  font-size: .72rem;
+  font-weight: 600;
+  color: #475569;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sl-list-scores { font-weight: 800; font-family: var(--pl-font-mono); color: #0F172A; text-align: right; font-size: .86rem; }
 .sl-list-lock { font-size: .76rem; font-weight: 700; color: #4F46E5; background: #EEF2FF; padding: 3px 8px; border-radius: 8px; }
+@media (max-width: 720px) {
+  .sl-list-head { display: none; }
+  .sl-list-row { grid-template-columns: 96px minmax(0, 1fr) 54px; }
+  .sl-list-liga { display: none; }
+}
 
 /* ───────── Spinner / carga ───────── */
 [data-testid="stSpinnerIcon"] { display: block !important; }

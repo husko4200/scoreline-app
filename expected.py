@@ -44,17 +44,14 @@ def _fmt_fecha_chile(fecha_iso: str) -> str:
 
 
 def _fmt_hora_corta_chile(fecha_iso: str) -> str:
-    """Devuelve HH:MM (hora Chile) o dd/mm HH:MM si no es hoy."""
+    """Devuelve siempre dd/mm HH:MM (hora Chile) para mantener alineadas todas las filas."""
     if not fecha_iso:
-        return "--:--"
+        return "Sin fecha"
     try:
         dt = datetime.fromisoformat(str(fecha_iso).replace("Z", "+00:00")).astimezone(_TZ_CHILE)
-        hoy = datetime.now(_TZ_CHILE).date()
-        if dt.date() == hoy:
-            return dt.strftime("%H:%M")
         return dt.strftime("%d/%m %H:%M")
     except Exception:  # noqa: BLE001
-        return "--:--"
+        return "Sin fecha"
 
 
 @st.cache_data(ttl=120, show_spinner=False)
@@ -401,7 +398,8 @@ def _render_proximos_bloqueados(partidos_pre):
                 f'<div><img class="sl-mlogo" src="{_esc(h["logo"])}" alt=""> <b>{_esc(h["nombre"])}</b></div>'
                 f'<div><img class="sl-mlogo" src="{_esc(a["logo"])}" alt=""> <b>{_esc(a["nombre"])}</b></div>'
                 f'</div>'
-                f'<span class="sl-list-lock" title="Disponible en ScoreLine Pro">🔒 Pro</span>'
+                f'<span class="sl-list-liga">{_esc(m.get("liga") or "")}</span>'
+                f'<div class="sl-list-scores"><span class="sl-list-lock" title="Disponible en ScoreLine Pro">🔒 Pro</span></div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -587,7 +585,7 @@ def _render_rachas(deporte):
 
 
 def _render_lista_compacta(deporte):
-    """Lista compacta por liga inspirada en PowerStats con botón Verificar o candado Pro."""
+    """Tabla compacta de partidos con columnas alineadas, fecha siempre visible y botón de detalle."""
     if deporte == NBA:
         partidos = _cargar_nba_reciente_y_hoy()
     else:
@@ -597,17 +595,20 @@ def _render_lista_compacta(deporte):
             todos = []
         partidos = [m for m in todos if m["deporte"] == FUTBOL]
 
-    busq = st.text_input("Buscar equipo...", placeholder="Buscar equipo o liga...", key="exp_busq", label_visibility="collapsed")
-    filtro = st.pills(
-        "Estado",
-        ["Todas", "En vivo", "Por jugar", "Finalizadas"],
-        default="Todas",
-        key="exp_lista_estado",
-        label_visibility="collapsed",
-    ) if hasattr(st, "pills") else st.radio(
-        "Estado", ["Todas", "En vivo", "Por jugar", "Finalizadas"],
-        horizontal=True, key="exp_lista_estado", label_visibility="collapsed",
-    )
+    c_flt, c_bus = st.columns([2.3, 1.7], vertical_alignment="center")
+    with c_flt:
+        filtro = st.pills(
+            "Estado",
+            ["Todas", "En vivo", "Por jugar", "Finalizadas"],
+            default="Todas",
+            key="exp_lista_estado",
+            label_visibility="collapsed",
+        ) if hasattr(st, "pills") else st.radio(
+            "Estado", ["Todas", "En vivo", "Por jugar", "Finalizadas"],
+            horizontal=True, key="exp_lista_estado", label_visibility="collapsed",
+        )
+    with c_bus:
+        busq = st.text_input("Buscar equipo...", placeholder="Buscar equipo o liga...", key="exp_busq", label_visibility="collapsed")
 
     q = (busq or "").strip().lower()
     filtrados = []
@@ -626,21 +627,44 @@ def _render_lista_compacta(deporte):
         st.info("No hay partidos que coincidan con este filtro.")
         return
 
+    orden_est = {"in": 0, "pre": 1, "post": 2}
+    filtrados.sort(key=lambda m: (orden_est.get(m["state"], 3), m.get("fecha") or ""))
+
+    c_h, _ = st.columns([4.8, 1.15], vertical_alignment="center")
+    c_h.markdown(
+        '<div class="sl-list-head">'
+        '<span>Fecha y hora</span><span>Partido</span><span style="text-align:center;">Liga</span><span style="text-align:right;">Marcador</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
     es_pro = planes.es_pro()
-    for m in filtrados[:12]:
+    for m in filtrados[:14]:
         h, a = m["home"], m["away"]
-        hora_lbl = "Final" if m["state"] == "post" else ("EN VIVO" if m["state"] == "in" else _fmt_hora_corta_chile(m.get("fecha")))
-        c_row, c_btn = st.columns([4.4, 1.1], vertical_alignment="center")
+        fecha_txt = _fmt_hora_corta_chile(m.get("fecha"))
+        if m["state"] == "in":
+            hora_lbl = "🔴 EN VIVO"
+            time_cls = "sl-list-time is-live"
+        elif m["state"] == "post":
+            hora_lbl = f"Fin · {fecha_txt.split(' ')[0]}" if " " in fecha_txt else "Finalizado"
+            time_cls = "sl-list-time is-post"
+        else:
+            hora_lbl = fecha_txt
+            time_cls = "sl-list-time"
+
+        c_row, c_btn = st.columns([4.8, 1.15], vertical_alignment="center")
         with c_row:
-            sc_h = _esc(h["score"]) if m["state"] in ("in", "post") else ""
-            sc_a = _esc(a["score"]) if m["state"] in ("in", "post") else ""
+            sc_h = _esc(h["score"]) if m["state"] in ("in", "post") else "–"
+            sc_a = _esc(a["score"]) if m["state"] in ("in", "post") else "–"
+            liga_lbl = _esc((m.get("liga") or "").split("·")[0].strip())
             st.markdown(textwrap.dedent(f"""
             <div class="sl-list-row">
-              <span class="sl-list-time">{_esc(hora_lbl)}</span>
+              <span class="{time_cls}">{_esc(hora_lbl)}</span>
               <div class="sl-list-teams">
                 <div><img class="sl-mlogo" src="{_esc(h['logo'])}" alt=""> <b>{_esc(h['nombre'])}</b></div>
                 <div><img class="sl-mlogo" src="{_esc(a['logo'])}" alt=""> <b>{_esc(a['nombre'])}</b></div>
               </div>
+              <span class="sl-list-liga" title="{_esc(m.get('liga') or '')}">{liga_lbl}</span>
               <div class="sl-list-scores">
                 <div>{sc_h}</div>
                 <div>{sc_a}</div>
@@ -649,7 +673,7 @@ def _render_lista_compacta(deporte):
             """).strip(), unsafe_allow_html=True)
         with c_btn:
             if m["state"] == "pre" and not es_pro:
-                if st.button("🔒", key=f"exp_lock_{m['id']}", help="Pronóstico disponible en ScoreLine Pro", use_container_width=True):
+                if st.button("🔒 Pro", key=f"exp_lock_{m['id']}", help="Pronóstico disponible en ScoreLine Pro", use_container_width=True):
                     planes.modal_pro()
             else:
                 if st.button("Verificar", key=f"exp_ver_{m['id']}", use_container_width=True):
@@ -677,7 +701,7 @@ def render():
     with c_vista:
         vista = st.radio(
             "Vista",
-            ["🎯 Top Expected", "🔥 Rachas", "📋 Partidos"],
+            ["🎯 Top Expected", "📋 Partidos", "🔥 Rachas"],
             horizontal=True,
             key="exp_vista",
             label_visibility="collapsed",
