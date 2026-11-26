@@ -1444,9 +1444,9 @@ def render(liga, comparativa, jugador=False):
                 st.session_state[clave_r] = (region.get(por_id[elegido]["nombre"]) if elegido in por_id and elegido not in en_mejores
                                              else MEJORES)
         lista = {}
-        for lado, titulo, kw in (("a", "Equipo A", {}),
-                                 ("b", "Equipo B (opcional, para comparar)", {"bloqueado": st.session_state["fe_a"], "con_ninguno": True})):
-            sel = st.radio(f"Región del {titulo.split(' (')[0]}", list(por_region), horizontal=True, key=f"ff_conf_{lado}",
+        for lado, titulo, kw in (("a", "Local", {}),
+                                 ("b", "Visita (opcional, para comparar)", {"bloqueado": st.session_state["fe_a"], "con_ninguno": True})):
+            sel = st.radio(f"Región de {titulo.split(' (')[0]}", list(por_region), horizontal=True, key=f"ff_conf_{lado}",
                            format_func=lambda r: r if r == MEJORES else f"{r} ({len(por_region[r])})")
             lista[lado] = por_region[sel]
             fe._fila_escudos(titulo, f"fe_{lado}", lista[lado], por_id, **kw)
@@ -1454,14 +1454,14 @@ def render(liga, comparativa, jugador=False):
         ids = {e["nombre"]: e["id"] for e in todos}
         with st.expander("🔎 Buscar un país por nombre"):
             o1, o2 = st.columns(2)
-            o1.selectbox("Equipo A", ["—"] + list(ids), key="ff_otro_a", on_change=_elegir_otro, args=("fe_a", "ff_otro_a", ids, region))
-            o2.selectbox("Equipo B (opcional)", ["—"] + list(ids), key="ff_otro_b", on_change=_elegir_otro, args=("fe_b", "ff_otro_b", ids, region))
+            o1.selectbox("Local", ["—"] + list(ids), key="ff_otro_a", on_change=_elegir_otro, args=("fe_a", "ff_otro_a", ids, region))
+            o2.selectbox("Visita (opcional)", ["—"] + list(ids), key="ff_otro_b", on_change=_elegir_otro, args=("fe_b", "ff_otro_b", ids, region))
     else:
         fe.selector_equipos(equipos, por_id, key_pref="ff", con_abbr=False)
         with st.expander("🛡️ Elegir desde cuadrícula de escudos", expanded=False):
             st.markdown(_css_escudos(equipos), unsafe_allow_html=True)
-            fe._fila_escudos("Equipo A", "fe_a", equipos, por_id)
-            fe._fila_escudos("Equipo B (opcional, para comparar)", "fe_b", equipos, por_id,
+            fe._fila_escudos("Local", "fe_a", equipos, por_id)
+            fe._fila_escudos("Visita (opcional, para comparar)", "fe_b", equipos, por_id,
                              bloqueado=st.session_state["fe_a"], con_ninguno=True)
     ida, idb = st.session_state["fe_a"], st.session_state["fe_b"]
     eq_a, eq_b = por_id[ida], (por_id[idb] if idb else None)

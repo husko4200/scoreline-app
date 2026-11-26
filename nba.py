@@ -924,8 +924,8 @@ def live_panel():
 def vista_h2h(g, t, rat):
     nombres = sorted(t["Equipo"].unique())
     c1, c2, c3 = st.columns([2, 2, 1])
-    a = c1.selectbox("Equipo A", nombres, index=0, key="h2h_a")
-    b = c2.selectbox("Equipo B", nombres, index=min(1, len(nombres) - 1), key="h2h_b")
+    a = c1.selectbox("Local", nombres, index=0, key="h2h_a")
+    b = c2.selectbox("Visita", nombres, index=min(1, len(nombres) - 1), key="h2h_b")
     linea = c3.number_input("Línea total", value=225.0, step=0.5, key="h2h_linea")
     if a == b:
         st.warning("Elige dos equipos distintos.")

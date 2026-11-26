@@ -919,22 +919,48 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
 .sl-team-pill {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  border-radius: 11px;
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 2px 8px -4px rgba(15, 23, 42, .06);
-  color: #0F172A;
-  font-size: .86rem;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 4px 14px -4px rgba(15, 23, 42, .07) !important;
+  color: #0F172A !important;
+  font-size: .92rem;
   font-weight: 700;
 }
 .sl-team-pill img {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   flex-shrink: 0;
+}
+.sl-team-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #0F172A;
+}
+.sl-team-badge {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.sl-team-badge.local {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border: 1px solid #C7D2FE;
+}
+.sl-team-badge.visita {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #CBD5E1;
 }
 /* Al hacer clic para escribir en cualquier selectbox, oculta el texto fantasma del equipo anterior */
 [data-testid="stMain"] [data-baseweb="select"]:focus-within div:has(> input) > div:not(:has(input)) {

@@ -1710,8 +1710,8 @@ def _fila_escudos(titulo, clave, equipos, por_id, bloqueado=None, con_ninguno=Fa
                       args=(clave, e["id"]), type="primary" if e["id"] == elegido else "secondary",
                       disabled=e["id"] == bloqueado)
     if con_ninguno and elegido is not None:
-        st.button("✕ Quitar Equipo B", key=f"{clave}_ninguno", on_click=_elegir, args=(clave, None),
-                  help="Analizar solo el Equipo A")
+        st.button("✕ Quitar Visita", key=f"{clave}_ninguno", on_click=_elegir, args=(clave, None),
+                  help="Analizar solo el Local")
 
 
 def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
@@ -1750,17 +1750,22 @@ def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
         eq = por_id[i]
         return eq["nombre"]
 
-    def _pill(eq):
+    def _pill(eq, rol="Local"):
         logo = eq.get("logo") or ""
         img = f'<img src="{_e(logo)}" alt="">' if logo else "<span>🛡️</span>"
-        st.markdown(f'<div class="sl-team-pill">{img}<span>{_e(_etq(eq["id"]))}</span></div>', unsafe_allow_html=True)
+        cls_rol = "visita" if rol == "Visita" else "local"
+        st.markdown(
+            f'<div class="sl-team-pill">{img}<span class="sl-team-name">{_e(_etq(eq["id"]))}</span>'
+            f'<span class="sl-team-badge {cls_rol}">{_e(rol.upper())}</span></div>',
+            unsafe_allow_html=True,
+        )
 
     cols = st.columns(2, gap="medium") if modo_cmp else [st.container()]
     with cols[0]:
-        _pill(por_id[st.session_state["fe_a"]])
+        _pill(por_id[st.session_state["fe_a"]], "Local")
         idx_a = ids_eq.index(st.session_state["fe_a"]) if st.session_state["fe_a"] in ids_eq else 0
         sel_a = st.selectbox(
-            "Equipo A (escribe o usa las flechas)",
+            "Local",
             ids_eq,
             index=idx_a,
             format_func=_etq,
@@ -1779,10 +1784,10 @@ def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
             if st.session_state["fe_b"] not in ops_b:
                 st.session_state["fe_b"] = ops_b[0]
             with cols[1]:
-                _pill(por_id[st.session_state["fe_b"]])
+                _pill(por_id[st.session_state["fe_b"]], "Visita")
                 idx_b = ops_b.index(st.session_state["fe_b"])
                 sel_b = st.selectbox(
-                    "Equipo B (escribe o usa las flechas)",
+                    "Visita",
                     ops_b,
                     index=idx_b,
                     format_func=_etq,
@@ -1888,8 +1893,8 @@ def render():
 
     with st.expander("🛡️ Elegir desde cuadrícula de escudos", expanded=False):
         st.markdown(_css_escudos(equipos), unsafe_allow_html=True)
-        _fila_escudos("Equipo A", "fe_a", equipos, por_id)
-        _fila_escudos("Equipo B (opcional, para comparar)", "fe_b", equipos, por_id, bloqueado=st.session_state["fe_a"], con_ninguno=True)
+        _fila_escudos("Local", "fe_a", equipos, por_id)
+        _fila_escudos("Visita (opcional, para comparar)", "fe_b", equipos, por_id, bloqueado=st.session_state["fe_a"], con_ninguno=True)
     import planes
     es_pro = planes.es_pro()
     ida, idb = st.session_state["fe_a"], st.session_state["fe_b"]
