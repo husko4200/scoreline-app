@@ -472,3 +472,15 @@ def banner_plan_header():
     """
     # No se renderiza nada: la tarjeta Pro en el sidebar + el modal en cada bloque Pro son suficientes.
     return
+
+
+
+def aviso_gratuito(etiqueta: str, texto_html: str) -> None:
+    """Muestra un aviso destacado y elegante para el alcance del Plan Gratuito."""
+    st.markdown(
+        f'<div class="sl-free-banner">'
+        f'<span class="sl-free-tag">✦ {etiqueta}</span>'
+        f'<span class="sl-free-msg">{texto_html}</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )

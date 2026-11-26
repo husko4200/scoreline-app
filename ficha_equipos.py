@@ -1902,7 +1902,10 @@ def render():
         ventana = st.radio("Partidos a analizar", ventanas, index=1, horizontal=True, key="fe_ventana",
                            format_func=lambda v: "⚔️ Enfrentamientos directos" if v == "h2h" else f"Últimos {v}")
     else:
-        st.caption("Plan Gratuito en Equipos: solo estadísticas de **Puntos (PTS)** y **últimos 5 partidos**.")
+        planes.aviso_gratuito(
+            "Plan Gratuito · Equipos",
+            "Acceso incluido a estadísticas de <b>Puntos (PTS)</b> en los <b>últimos 5 partidos</b>.",
+        )
         mercado = "Puntos del equipo"
         ventana = 5
         planes.bloque_pro(

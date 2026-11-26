@@ -632,7 +632,10 @@ def _render_lista_compacta(deporte):
 
     es_pro = planes.es_pro()
     if not es_pro:
-        st.caption("🎁 Plan gratuito: tienes **1 partido gratis** para verificar completo. Los demás requieren **ScoreLine Pro**.")
+        planes.aviso_gratuito(
+            "Plan Gratuito",
+            "Tienes <b>1 partido gratis</b> para verificar completo. Los demás requieren <b>ScoreLine Pro</b>.",
+        )
 
     c_h, _ = st.columns([4.8, 1.25], vertical_alignment="center")
     c_h.markdown(

@@ -962,6 +962,44 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   color: #475569;
   border: 1px solid #CBD5E1;
 }
+.sl-free-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 16px;
+  margin: 6px 0 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 65%, #FEF3C7 100%);
+  border: 1px solid #C7D2FE;
+  border-left: 4px solid #4F46E5;
+  box-shadow: 0 6px 18px -6px rgba(79, 70, 229, .16);
+}
+.sl-free-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+  color: #FFFFFF;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px -2px rgba(79, 70, 229, .4);
+}
+.sl-free-msg {
+  color: #1E293B;
+  font-size: .9rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.sl-free-msg b, .sl-free-msg strong {
+  color: #4338CA;
+  font-weight: 700;
+}
 /* Al hacer clic para escribir en cualquier selectbox, oculta el texto fantasma del equipo anterior */
 [data-testid="stMain"] [data-baseweb="select"]:focus-within div:has(> input) > div:not(:has(input)) {
   opacity: 0 !important;

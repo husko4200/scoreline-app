@@ -1474,7 +1474,10 @@ def render(liga, comparativa, jugador=False):
         ventana = st.radio("Partidos a analizar", ventanas, index=1, horizontal=True, key="ff_ventana",
                            format_func=lambda v: "⚔️ Enfrentamientos directos" if v == "h2h" else f"Últimos {v}")
     else:
-        st.caption("Plan Gratuito en Fútbol: mercado **Total de goles del partido (más/menos)** y **últimos 5 partidos**.")
+        planes.aviso_gratuito(
+            "Plan Gratuito · Fútbol",
+            "Acceso incluido al mercado <b>Total de goles del partido (más/menos)</b> en los <b>últimos 5 partidos</b>.",
+        )
         mercado = "Total de goles del partido (más/menos)"
         ventana = 5
         planes.bloque_pro(
