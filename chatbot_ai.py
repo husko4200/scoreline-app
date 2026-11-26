@@ -15,29 +15,20 @@ import re as _re
 
 
 def _md_simple(txt: str) -> str:
-    """Convierte Markdown muy básico (negrita, listas) a HTML seguro."""
+    """Convierte Markdown básico (negrita, listas) a HTML inline seguro en una sola línea."""
     txt = _esc(txt)
-    # **negrita**
     txt = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", txt)
-    # líneas de lista (- item)
-    lines = txt.split("\n")
-    out, in_ul = [], False
-    for ln in lines:
-        m = _re.match(r"^[-•]\s+(.+)$", ln)
+    out = []
+    for ln in txt.split("\n"):
+        s = ln.strip()
+        if not s:
+            continue
+        m = _re.match(r"^[-•]\s+(.+)$", s)
         if m:
-            if not in_ul:
-                out.append("<ul style='margin:.35em 0 .35em 1em;padding:0;list-style:disc'>")
-                in_ul = True
-            out.append(f"<li>{m.group(1)}</li>")
+            out.append(f'<div class="sl-ai-li"><span class="sl-ai-dot">•</span><span>{m.group(1)}</span></div>')
         else:
-            if in_ul:
-                out.append("</ul>")
-                in_ul = False
-            if ln.strip():
-                out.append(f"<span>{ln}</span><br>")
-    if in_ul:
-        out.append("</ul>")
-    return "".join(out).rstrip("<br>")
+            out.append(f'<div class="sl-ai-p">{s}</div>')
+    return "".join(out)
 import json
 import os
 import threading
@@ -45,10 +36,11 @@ from typing import Any
 
 import requests
 import streamlit as st
+import streamlit.components.v1 as _comp
 
 import planes
 
-LIMITE_GRATIS_DIA = 1
+LIMITE_GRATIS_DIA = 3
 
 _CARPETA = os.path.dirname(os.path.abspath(__file__))
 _PROMPT_PATH = os.path.join(_CARPETA, "scoreline-ai-system-prompt.md")
@@ -173,28 +165,40 @@ def _incrementar_uso_hoy() -> int:
 # Contexto real <datos_app>
 # ---------------------------------------------------------------------------
 def _construir_datos_app(seccion: str) -> str:
-    lineas = [f"Sección activa: {seccion or 'Inicio'}", f"Fecha: {date.today().isoformat()}"]
+    lineas = [f"Sección activa: {seccion or 'Inicio'}", f"Fecha actual: {date.today().isoformat()}"]
     try:
         import inicio
         _, partidos = inicio._resumen_dia()
         if partidos:
-            lineas.append(f"Partidos del día ({len(partidos)} total, mostrando hasta 25):")
-            for m in partidos[:25]:
-                h = m.get("home") or {}
-                a = m.get("away") or {}
+            vivos = [m for m in partidos if m.get("state") == "in"]
+            prox = [m for m in partidos if m.get("state") == "pre"]
+            finales = [m for m in partidos if m.get("state") == "post"]
+
+            def _fmt(m: dict[str, Any]) -> str:
+                h, a = m.get("home") or {}, m.get("away") or {}
                 st_m = m.get("state", "pre")
                 if st_m == "in":
                     est = f"EN VIVO {h.get('score', '-')}-{a.get('score', '-')} ({m.get('hora', '')})"
                 elif st_m == "post":
-                    est = f"FINAL {h.get('score', '-')}-{a.get('score', '-')}"
+                    est = f"YA FINALIZADO (resultado pasado): {h.get('score', '-')}-{a.get('score', '-')}"
                 else:
-                    est = f"Programado {m.get('hora', '')}"
+                    est = f"Programado (por jugarse): {m.get('hora', '')}"
                 prob = m.get("prob")
                 prob_txt = f" · Prob Local {prob}%" if prob is not None else ""
-                lineas.append(
+                return (
                     f"- [{m.get('deporte', '')} · {m.get('liga', '')}] "
                     f"{h.get('nombre', '?')} (Local) vs {a.get('nombre', '?')} (Visita): {est}{prob_txt}"
                 )
+
+            if vivos:
+                lineas.append(f"PARTIDOS EN VIVO ({len(vivos)}):")
+                lineas.extend(_fmt(m) for m in vivos[:12])
+            if prox:
+                lineas.append(f"PRÓXIMOS PARTIDOS POR JUGARSE ({len(prox)}, mostrando hasta 15):")
+                lineas.extend(_fmt(m) for m in prox[:15])
+            if finales:
+                lineas.append(f"PARTIDOS YA FINALIZADOS / RESULTADOS PASADOS ({len(finales)}, NO son próximos):")
+                lineas.extend(_fmt(m) for m in finales[:10])
         else:
             lineas.append("No hay partidos cargados en el resumen del día.")
     except Exception:  # noqa: BLE001
@@ -289,7 +293,13 @@ def _respuesta_local_datos(pregunta: str, seccion: str) -> str:
     programados = [m for m in partidos if m.get("state") == "pre"]
 
     # 3. Búsqueda de equipo/jugador específico en la pregunta
-    palabras = [p for p in _re.findall(r"[a-záéíóúñ0-9]{3,}", q) if p not in {"que", "como", "para", "con", "hoy", "partido", "partidos", "quien", "gana", "tiene", "mejor", "sobre", "entre", "local", "visita"}]
+    _stop = {
+        "que", "qué", "como", "cómo", "para", "con", "hoy", "ayer", "mañana", "manana",
+        "partido", "partidos", "quien", "quién", "gana", "tiene", "mejor", "sobre",
+        "entre", "local", "visita", "cuando", "cuándo", "juega", "jugo", "jugó",
+        "hora", "proximo", "próximo", "resultado", "marcador", "pero", "esta", "está",
+    }
+    palabras = [p for p in _re.findall(r"[a-záéíóúñ0-9]{3,}", q) if p not in _stop]
     coincidencias = []
     for m in partidos:
         h = (m.get("home") or {}).get("nombre", "")
@@ -299,16 +309,28 @@ def _respuesta_local_datos(pregunta: str, seccion: str) -> str:
             coincidencias.append(m)
 
     if coincidencias and palabras:
-        lineas = ["Esto es lo que tengo en ScoreLine para tu búsqueda:"]
-        for m in coincidencias[:4]:
-            h, a = m.get("home") or {}, m.get("away") or {}
-            st_m = m.get("state", "pre")
-            est = f"EN VIVO {h.get('score', '-')}-{a.get('score', '-')}" if st_m == "in" else (
-                f"FINAL {h.get('score', '-')}-{a.get('score', '-')}" if st_m == "post" else f"Hoy {m.get('hora', '')}"
-            )
-            prob = m.get("prob")
-            prob_txt = f" · Estimación Local: **{prob}%**" if prob is not None else ""
-            lineas.append(f"- **{h.get('nombre', '?')}** vs **{a.get('nombre', '?')}** ({m.get('deporte', '')}) — {est}{prob_txt}")
+        activos = [m for m in coincidencias if m.get("state") in ("in", "pre")]
+        pasados = [m for m in coincidencias if m.get("state") == "post"]
+        pide_futuro = any(w in q for w in ("cuando", "cuándo", "juega", "hoy", "hora", "próximo", "proximo", "mañana", "manana"))
+        lineas = []
+        if activos:
+            lineas.append("Esto es lo que encontré en la programación actual:")
+            for m in activos[:4]:
+                h, a = m.get("home") or {}, m.get("away") or {}
+                est = f"EN VIVO {h.get('score', '-')}-{a.get('score', '-')}" if m.get("state") == "in" else f"Programado ({m.get('hora', '')})"
+                prob = m.get("prob")
+                prob_txt = f" · Estimación Local: **{prob}%**" if prob is not None else ""
+                lineas.append(f"- **{h.get('nombre', '?')}** vs **{a.get('nombre', '?')}** ({m.get('deporte', '')}) — {est}{prob_txt}")
+        if pasados:
+            if not activos and pide_futuro:
+                lineas.append("No tengo un próximo partido programado en la app para esa búsqueda. El partido más reciente registrado **ya finalizó**:")
+            elif not activos:
+                lineas.append("Partido(s) ya finalizados encontrados en ScoreLine:")
+            else:
+                lineas.append("También figura este resultado ya finalizado:")
+            for m in pasados[:3]:
+                h, a = m.get("home") or {}, m.get("away") or {}
+                lineas.append(f"- **{h.get('nombre', '?')} {h.get('score', '-')} - {a.get('score', '-')} {a.get('nombre', '?')}** ({m.get('deporte', '')} · Ya finalizado)")
         lineas.append("Recuerda que las probabilidades son estimaciones basadas en los datos de la app, no certezas.")
         return "\n".join(lineas)
 
@@ -468,15 +490,16 @@ def modal_chat(seccion_actual: str = "") -> None:
     av_src = f"data:image/png;base64,{av_b64}" if av_b64 else ""
     mascot_src = f"data:image/png;base64,{mascot_b64}" if mascot_b64 else av_src
 
-    badge_txt = "ScoreLine Pro · Ilimitado" if es_pro else f"Plan Gratuito · {max(0, LIMITE_GRATIS_DIA - usadas)}/{LIMITE_GRATIS_DIA} consulta hoy"
+    restantes = max(0, LIMITE_GRATIS_DIA - usadas)
+    badge_txt = "Pro · Ilimitado" if es_pro else f"Gratis · {restantes}/{LIMITE_GRATIS_DIA} hoy"
     badge_cls = "is-pro" if es_pro else ("is-empty" if bloqueado else "is-free")
 
     st.markdown(
         f'<div class="sl-ai-head">'
-        f'<img class="sl-ai-head-ico" src="{av_src}" alt="ScoreLine AI">'
+        f'<div class="sl-ai-head-av-wrap"><img class="sl-ai-head-ico" src="{av_src}" alt="ScoreLine AI"><span class="sl-ai-online-dot"></span></div>'
         f'<div class="sl-ai-head-info">'
         f'<div class="sl-ai-title">ScoreLine AI</div>'
-        f'<div class="sl-ai-sub">Análisis deportivo con datos en tiempo real de la app</div>'
+        f'<div class="sl-ai-sub">Analista deportivo en tiempo real</div>'
         f'</div>'
         f'<span class="sl-ai-badge {badge_cls}">{_esc(badge_txt)}</span>'
         f'</div>',
@@ -487,7 +510,7 @@ def modal_chat(seccion_actual: str = "") -> None:
         st.session_state["sl_ai_msgs"] = []
     msgs: list[dict[str, str]] = st.session_state["sl_ai_msgs"]
 
-    # Construir historial HTML
+    # Construir historial HTML en una sola línea limpia (sin <script> ni saltos que rompan flex)
     if msgs:
         burbujas = []
         for m in msgs:
@@ -500,31 +523,30 @@ def modal_chat(seccion_actual: str = "") -> None:
                     f'<div class="sl-ai-bubble bot">{_md_simple(m["content"])}</div>'
                     f'</div>'
                 )
-        # Ancla al final para scroll automático
-        burbujas.append('<div id="sl-ai-msgs-end" style="height:1px;"></div>')
-        chat_body_html = (
-            f'<div class="sl-ai-msgs" id="sl-ai-msgs-box">{"".join(burbujas)}</div>'
-            '<script>(function(){var b=document.getElementById("sl-ai-msgs-box");'
-            'if(b){var e=b.querySelector("#sl-ai-msgs-end");if(e)e.scrollIntoView({behavior:"smooth"});'
-            'else b.scrollTop=b.scrollHeight;}})()</script>'
-        )
+        chat_body_html = f'<div class="sl-ai-msgs" id="sl-ai-msgs-box">{"".join(burbujas)}</div>'
     else:
         chat_body_html = (
             '<div class="sl-ai-welcome">'
+            '<div class="sl-ai-bot-stage">'
+            '<div class="sl-ai-bot-aura"></div>'
             f'<img class="sl-ai-welcome-img" src="{mascot_src}" alt="ScoreLine AI">'
-            '<div class="sl-ai-welcome-txt">Pregúntame sobre los partidos de hoy, probabilidades de ScoreLine, forma reciente o métricas.</div>'
+            '</div>'
+            '<div class="sl-ai-welcome-title">¿Qué partido analizamos hoy?</div>'
+            '<div class="sl-ai-welcome-txt">Pregúntame por partidos en vivo, probabilidades de ScoreLine, forma reciente o cómo leer cada métrica.</div>'
             '</div>'
         )
 
     if bloqueado:
-        # Efecto cristal suave difuminado + robot + botón Pasar a Pro con animación de entrada
         st.markdown(
             f'<div class="sl-ai-blur-stage">'
             f'<div class="sl-ai-blurred-bg">{chat_body_html}</div>'
             f'<div class="sl-ai-glass-overlay">'
+            '<div class="sl-ai-bot-stage is-compact">'
+            '<div class="sl-ai-bot-aura"></div>'
             f'<img class="sl-ai-glass-bot" src="{mascot_src}" alt="ScoreLine AI">'
-            f'<div class="sl-ai-glass-title">Alcanzaste tu consulta gratis de hoy</div>'
-            f'<div class="sl-ai-glass-sub">Pasa a ScoreLine Pro para hacer preguntas ilimitadas sobre todos los partidos y métricas.</div>'
+            '</div>'
+            f'<div class="sl-ai-glass-title">Alcanzaste tus {LIMITE_GRATIS_DIA} consultas gratis de hoy</div>'
+            f'<div class="sl-ai-glass-sub">Pasa a ScoreLine Pro para preguntar sin límites sobre todos los partidos, rachas y métricas.</div>'
             f'</div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -536,13 +558,21 @@ def modal_chat(seccion_actual: str = "") -> None:
 
     st.markdown(chat_body_html, unsafe_allow_html=True)
 
+    if msgs:
+        _comp.html(
+            '<script>try{var b=window.parent.document.getElementById("sl-ai-msgs-box");'
+            'if(b)b.scrollTo({top:b.scrollHeight,behavior:"smooth"});}catch(e){}</script>',
+            height=0,
+            width=0,
+        )
+
     # Sugerencias rápidas cuando el chat está vacío
     pregunta_chip = None
     if not msgs:
         sugs = [
             "¿Qué partidos hay en vivo ahora?",
-            "¿Por qué tiene mayor probabilidad el favorito hoy?",
-            "¿Cómo interpreto las métricas de ScoreLine?",
+            "¿Quién es favorito hoy según la app?",
+            "¿Cómo interpreto las métricas?",
         ]
         cols_s = st.columns(3, gap="small")
         for idx, sug in enumerate(sugs):
@@ -553,7 +583,7 @@ def modal_chat(seccion_actual: str = "") -> None:
         c_inp, c_btn = st.columns([4.4, 1.1], vertical_alignment="center")
         texto = c_inp.text_input(
             "Mensaje",
-            placeholder="Escribe tu pregunta sobre un partido o métrica...",
+            placeholder="Escribe tu pregunta sobre un equipo, partido o métrica...",
             label_visibility="collapsed",
             key="sl_ai_input",
         )
@@ -561,9 +591,10 @@ def modal_chat(seccion_actual: str = "") -> None:
 
     # Barra de acciones debajo del formulario
     if msgs:
-        _c_clear, _ = st.columns([1, 3])
-        if _c_clear.button("🗑 Nuevo chat", key="sl_ai_clear", type="tertiary"):
+        _c_clear, _ = st.columns([1.2, 3])
+        if _c_clear.button("↺ Nuevo chat", key="sl_ai_clear", type="tertiary"):
             st.session_state["sl_ai_msgs"] = []
+            st.session_state["_sl_ai_open"] = True
             st.rerun()
 
     pregunta = (pregunta_chip or (texto if enviado else "")).strip()
@@ -575,5 +606,6 @@ def modal_chat(seccion_actual: str = "") -> None:
         msgs.append({"role": "assistant", "content": resp})
         if ok and not es_pro:
             _incrementar_uso_hoy()
+        st.session_state["_sl_ai_open"] = True
         st.rerun()
 
