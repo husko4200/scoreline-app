@@ -1458,11 +1458,6 @@ def render(liga, comparativa, jugador=False):
             o2.selectbox("Visita (opcional)", ["—"] + list(ids), key="ff_otro_b", on_change=_elegir_otro, args=("fe_b", "ff_otro_b", ids, region))
     else:
         fe.selector_equipos(equipos, por_id, key_pref="ff", con_abbr=False)
-        with st.expander("🛡️ Elegir desde cuadrícula de escudos", expanded=False):
-            st.markdown(_css_escudos(equipos), unsafe_allow_html=True)
-            fe._fila_escudos("Local", "fe_a", equipos, por_id)
-            fe._fila_escudos("Visita (opcional, para comparar)", "fe_b", equipos, por_id,
-                             bloqueado=st.session_state["fe_a"], con_ninguno=True)
     ida, idb = st.session_state["fe_a"], st.session_state["fe_b"]
     eq_a, eq_b = por_id[ida], (por_id[idb] if idb else None)
     import planes

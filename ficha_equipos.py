@@ -1891,10 +1891,6 @@ def render():
 
     selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True)
 
-    with st.expander("🛡️ Elegir desde cuadrícula de escudos", expanded=False):
-        st.markdown(_css_escudos(equipos), unsafe_allow_html=True)
-        _fila_escudos("Local", "fe_a", equipos, por_id)
-        _fila_escudos("Visita (opcional, para comparar)", "fe_b", equipos, por_id, bloqueado=st.session_state["fe_a"], con_ninguno=True)
     import planes
     es_pro = planes.es_pro()
     ida, idb = st.session_state["fe_a"], st.session_state["fe_b"]
