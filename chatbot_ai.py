@@ -215,10 +215,149 @@ def _secret(nombre: str) -> str:
         return ""
 
 
-def _llamar_ia(pregunta: str, historial: list[dict[str, str]], datos_app: str) -> tuple[bool, str]:
+def _llamar_openai_compatible(
+    url: str,
+    api_key: str,
+    modelo: str,
+    sys_prompt: str,
+    historial: list[dict[str, str]],
+    pregunta: str,
+) -> str:
+    """Llama a un endpoint compatible con Chat Completions (Groq, OpenRouter, OpenAI)."""
+    msgs = [{"role": "system", "content": sys_prompt}]
+    msgs.extend({"role": m["role"], "content": m["content"]} for m in historial[-6:])
+    msgs.append({"role": "user", "content": pregunta})
+    try:
+        r = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={"model": modelo, "messages": msgs, "temperature": 0.4, "max_tokens": 420},
+            timeout=20,
+        )
+        if r.ok:
+            return (((r.json().get("choices") or [{}])[0].get("message") or {}).get("content") or "").strip()
+    except requests.RequestException:
+        pass
+    return ""
+
+
+def _respuesta_local_datos(pregunta: str, seccion: str) -> str:
+    """Motor local gratuito basado en los datos reales de ScoreLine (sin API externa)."""
+    q = pregunta.lower().strip()
+
+    # 1. Reglas estrictas del prompt: juego problemático, apuestas, legal
+    if any(w in q for w in ("perdiendo dinero", "deuda", "adicc", "no me control", "ansiedad", "ludopat", "recuperar dinero")):
+        return (
+            "Siento mucho que estés pasando por un momento difícil. "
+            "Si sientes que estás perdiendo el control, hablar con un profesional o con un servicio de ayuda de tu país puede marcar la diferencia. "
+            "Cuando quieras, sigo aquí para ayudarte únicamente con análisis deportivo."
+        )
+    if any(w in q for w in ("legal", "impuesto", "licencia", "regula", "prohibid")):
+        return (
+            "De temas legales no puedo orientarte. Para eso te conviene consultar fuentes oficiales o a un profesional. "
+            "Si quieres, seguimos con el análisis de algún partido de hoy."
+        )
+    if any(w in q for w in ("apuesto", "apostar", "apuesta", "cuota", "combinada", "parlay", "casa de", "pick", "seguro que gana", "fijo")):
+        return (
+            "No doy recomendaciones de apuestas ni sugiero picks o cuotas, pero sí puedo ayudarte a entender el partido. "
+            "Pregúntame por los partidos en vivo, los favoritos según ScoreLine o cómo interpretar nuestras métricas."
+        )
+
+    # 2. Cargar partidos reales del día
+    partidos: list[dict[str, Any]] = []
+    try:
+        import inicio
+        _, partidos = inicio._resumen_dia()
+    except Exception:  # noqa: BLE001
+        partidos = []
+
+    if any(w in q for w in ("métrica", "metrica", "expected", "como interpreto", "cómo interpreto", "qué significa", "que significa", "probabilidad")):
+        return (
+            "Las métricas de **ScoreLine** combinan forma reciente, rendimiento como local/visita, ritmo de juego y promedios históricos:\n"
+            "- **Prob. de Victoria**: estimación porcentual basada en los datos disponibles (no es una certeza).\n"
+            "- **Top Expected**: líneas estadísticas proyectadas según el ritmo reciente de equipos o jugadores.\n"
+            "- **Rachas y H2H**: comparan los últimos partidos y enfrentamientos directos."
+        )
+
+    if not partidos:
+        return (
+            "En este momento no tengo partidos cargados en el resumen del día en la app. "
+            "Prueba abrir la sección **En vivo**, **NBA**, **Fútbol** o **Tenis** para ver el detalle actualizado."
+        )
+
+    en_vivo = [m for m in partidos if m.get("state") == "in"]
+    programados = [m for m in partidos if m.get("state") == "pre"]
+
+    # 3. Búsqueda de equipo/jugador específico en la pregunta
+    palabras = [p for p in _re.findall(r"[a-záéíóúñ0-9]{3,}", q) if p not in {"que", "como", "para", "con", "hoy", "partido", "partidos", "quien", "gana", "tiene", "mejor", "sobre", "entre", "local", "visita"}]
+    coincidencias = []
+    for m in partidos:
+        h = (m.get("home") or {}).get("nombre", "")
+        a = (m.get("away") or {}).get("nombre", "")
+        texto_m = f"{h} {a} {m.get('liga', '')} {m.get('deporte', '')}".lower()
+        if any(w in texto_m for w in palabras):
+            coincidencias.append(m)
+
+    if coincidencias and palabras:
+        lineas = ["Esto es lo que tengo en ScoreLine para tu búsqueda:"]
+        for m in coincidencias[:4]:
+            h, a = m.get("home") or {}, m.get("away") or {}
+            st_m = m.get("state", "pre")
+            est = f"EN VIVO {h.get('score', '-')}-{a.get('score', '-')}" if st_m == "in" else (
+                f"FINAL {h.get('score', '-')}-{a.get('score', '-')}" if st_m == "post" else f"Hoy {m.get('hora', '')}"
+            )
+            prob = m.get("prob")
+            prob_txt = f" · Estimación Local: **{prob}%**" if prob is not None else ""
+            lineas.append(f"- **{h.get('nombre', '?')}** vs **{a.get('nombre', '?')}** ({m.get('deporte', '')}) — {est}{prob_txt}")
+        lineas.append("Recuerda que las probabilidades son estimaciones basadas en los datos de la app, no certezas.")
+        return "\n".join(lineas)
+
+    # 4. Partidos en vivo
+    if any(w in q for w in ("vivo", "directo", "jugando", "ahora")):
+        if not en_vivo:
+            prox = programados[:3]
+            if not prox:
+                return "No hay partidos en vivo en este momento según los datos cargados en ScoreLine."
+            lineas = ["No hay partidos en vivo ahora mismo, pero estos son los próximos del día:"]
+            for m in prox:
+                h, a = m.get("home") or {}, m.get("away") or {}
+                lineas.append(f"- **{h.get('nombre', '?')}** vs **{a.get('nombre', '?')}** ({m.get('deporte', '')}) — {m.get('hora', '')}")
+            return "\n".join(lineas)
+        lineas = [f"Hay **{len(en_vivo)}** partido(s) en vivo ahora en ScoreLine:"]
+        for m in en_vivo[:5]:
+            h, a = m.get("home") or {}, m.get("away") or {}
+            prob = m.get("prob")
+            prob_txt = f" · Prob. Local {prob}%" if prob is not None else ""
+            lineas.append(f"- **{h.get('nombre', '?')} {h.get('score', '-')} - {a.get('score', '-')} {a.get('nombre', '?')}** ({m.get('hora', '')}){prob_txt}")
+        return "\n".join(lineas)
+
+    # 5. Favorito / mayor probabilidad
+    con_prob = [m for m in partidos if m.get("prob") is not None]
+    if any(w in q for w in ("favorit", "mayor prob", "prob", "quien gana", "quién gana", "ventaja")) and con_prob:
+        top = sorted(con_prob, key=lambda m: max(int(m["prob"]), 100 - int(m["prob"])), reverse=True)[:3]
+        lineas = ["Según las estimaciones actuales de ScoreLine, los duelos más inclinados hoy son:"]
+        for m in top:
+            h, a = m.get("home") or {}, m.get("away") or {}
+            p_loc = int(m["prob"])
+            fav = h.get("nombre", "Local") if p_loc >= 50 else a.get("nombre", "Visita")
+            pct = max(p_loc, 100 - p_loc)
+            lineas.append(f"- **{h.get('nombre', '?')}** vs **{a.get('nombre', '?')}**: ventaja estimada para **{fav} ({pct}%)**.")
+        lineas.append("Son estimaciones basadas en forma reciente y rendimiento local/visita, nunca resultados seguros.")
+        return "\n".join(lineas)
+
+    # 6. Resumen general del día
+    sec_txt = seccion or "Inicio"
+    return (
+        f"En **{sec_txt}** tengo **{len(partidos)}** partidos en la jornada de hoy "
+        f"(**{len(en_vivo)}** en vivo y **{len(programados)}** programados). "
+        "Puedes preguntarme por un equipo específico, por los partidos en vivo o por los favoritos según nuestras estimaciones."
+    )
+
+
+def _llamar_ia(pregunta: str, historial: list[dict[str, str]], datos_app: str, seccion: str = "") -> tuple[bool, str]:
     sys_prompt = _leer_prompt() + "\n\n" + datos_app
 
-    # 1) Gemini API (vía REST con requests, sin dependencias extra)
+    # 1) Gemini API — Google AI Studio (tiene plan GRATUITO sin tarjeta)
     gem_key = _secret("GEMINI_API_KEY")
     if gem_key:
         modelo = _secret("GEMINI_MODEL") or "gemini-2.5-flash"
@@ -248,7 +387,35 @@ def _llamar_ia(pregunta: str, historial: list[dict[str, str]], datos_app: str) -
         except requests.RequestException:
             pass
 
-    # 2) Anthropic Claude (ya instalado en requirements.txt)
+    # 2) Groq Cloud (plan GRATUITO sin tarjeta, Llama 3.3 70B)
+    groq_key = _secret("GROQ_API_KEY")
+    if groq_key:
+        txt = _llamar_openai_compatible(
+            "https://api.groq.com/openai/v1/chat/completions",
+            groq_key,
+            _secret("GROQ_MODEL") or "llama-3.3-70b-versatile",
+            sys_prompt,
+            historial,
+            pregunta,
+        )
+        if txt:
+            return True, txt
+
+    # 3) OpenRouter (modelos :free gratuitos)
+    or_key = _secret("OPENROUTER_API_KEY")
+    if or_key:
+        txt = _llamar_openai_compatible(
+            "https://openrouter.ai/api/v1/chat/completions",
+            or_key,
+            _secret("OPENROUTER_MODEL") or "meta-llama/llama-3.3-70b-instruct:free",
+            sys_prompt,
+            historial,
+            pregunta,
+        )
+        if txt:
+            return True, txt
+
+    # 4) Anthropic Claude (opcional)
     ant_key = _secret("ANTHROPIC_API_KEY")
     if ant_key:
         try:
@@ -269,30 +436,22 @@ def _llamar_ia(pregunta: str, historial: list[dict[str, str]], datos_app: str) -
         except Exception:  # noqa: BLE001
             pass
 
-    # 3) OpenAI fallback
+    # 5) OpenAI (opcional)
     oai_key = _secret("OPENAI_API_KEY")
     if oai_key:
-        msgs = [{"role": "system", "content": sys_prompt}]
-        msgs.extend({"role": m["role"], "content": m["content"]} for m in historial[-6:])
-        msgs.append({"role": "user", "content": pregunta})
-        try:
-            r = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {oai_key}"},
-                json={"model": _secret("OPENAI_MODEL") or "gpt-4o-mini", "messages": msgs, "temperature": 0.4, "max_tokens": 420},
-                timeout=20,
-            )
-            if r.ok:
-                txt = (((r.json().get("choices") or [{}])[0].get("message") or {}).get("content") or "").strip()
-                if txt:
-                    return True, txt
-        except requests.RequestException:
-            pass
+        txt = _llamar_openai_compatible(
+            "https://api.openai.com/v1/chat/completions",
+            oai_key,
+            _secret("OPENAI_MODEL") or "gpt-4o-mini",
+            sys_prompt,
+            historial,
+            pregunta,
+        )
+        if txt:
+            return True, txt
 
-    return False, (
-        "ScoreLine AI aún no tiene configurada su clave en el servidor "
-        "(agrega `GEMINI_API_KEY` o `ANTHROPIC_API_KEY` en los Secrets de Streamlit)."
-    )
+    # 6) Respaldo local gratuito con datos reales de ScoreLine (siempre disponible sin costo)
+    return True, _respuesta_local_datos(pregunta, seccion)
 
 
 # ---------------------------------------------------------------------------
@@ -411,7 +570,7 @@ def modal_chat(seccion_actual: str = "") -> None:
     if pregunta:
         datos = _construir_datos_app(seccion_actual)
         with st.spinner("Analizando datos de ScoreLine..."):
-            ok, resp = _llamar_ia(pregunta, msgs, datos)
+            ok, resp = _llamar_ia(pregunta, msgs, datos, seccion_actual)
         msgs.append({"role": "user", "content": pregunta})
         msgs.append({"role": "assistant", "content": resp})
         if ok and not es_pro:
