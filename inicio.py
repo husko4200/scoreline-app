@@ -116,7 +116,7 @@ def _probabilidad_partido(state, h_score, a_score, linea_txt, h_ab):
     return 52, 48
 
 
-def _extraer_partidos(datos, deporte, liga_nombre):
+def _extraer_partidos(datos, deporte, liga_nombre, liga_slug=""):
     """Extrae partidos reales con escudos, marcador, probabilidad y hora desde el JSON de ESPN."""
     salida = []
     for ev in (datos or {}).get("events", []) or []:
@@ -170,6 +170,7 @@ def _extraer_partidos(datos, deporte, liga_nombre):
                 "fecha": c.get("date") or ev.get("date") or "",
                 "deporte": deporte,
                 "liga": liga_nombre,
+                "liga_slug": liga_slug,
                 "state": state,
                 "hora": hora_txt,
                 "home": h_inf,
@@ -184,14 +185,14 @@ def _extraer_partidos(datos, deporte, liga_nombre):
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _resumen_dia():
-    pedidos = ([(NBA, "NBA", nba.BASE + "/scoreboard")]
-               + [(FUTBOL, _NOMBRES_LIGA.get(liga, "Fútbol"), football.ESPN.format(liga=liga))
+    pedidos = ([(NBA, "NBA", "nba", nba.BASE + "/scoreboard")]
+               + [(FUTBOL, _NOMBRES_LIGA.get(liga, "Fútbol"), liga, football.ESPN.format(liga=liga))
                   for liga in LIGAS_RESUMEN])
     with ThreadPoolExecutor(max_workers=8) as pool:
-        respuestas = list(pool.map(lambda p: _descargar_json(p[2]), pedidos))
+        respuestas = list(pool.map(lambda p: _descargar_json(p[3]), pedidos))
     resumen = {d: {"vivo": 0, "pre": 0, "post": 0, "ok": 0, "total": 0} for d in (NBA, FUTBOL)}
     partidos = []
-    for (deporte, liga_nom, _), datos in zip(pedidos, respuestas):
+    for (deporte, liga_nom, liga_slug, _), datos in zip(pedidos, respuestas):
         r = resumen[deporte]
         r["total"] += 1
         if datos is not None:
@@ -200,7 +201,7 @@ def _resumen_dia():
             r["vivo"] += v
             r["pre"] += p
             r["post"] += f
-            partidos.extend(_extraer_partidos(datos, deporte, liga_nom))
+            partidos.extend(_extraer_partidos(datos, deporte, liga_nom, liga_slug))
     orden = {"in": 0, "pre": 1, "post": 2}
     partidos.sort(key=lambda m: orden.get(m["state"], 3))
     return resumen, partidos
@@ -413,100 +414,353 @@ def _toggle_favorito_equipo(tid):
     favoritos.guardar_equipos(actuales)
 
 
-@st.dialog("Detalle del partido", width="large")
+@st.cache_data(ttl=30, show_spinner=False)
+def _resumen_evento(event_id, deporte, liga_slug):
+    """Descarga resumen en vivo de un partido (estadísticas, cuartos y alineaciones)."""
+    if not event_id:
+        return None
+    if deporte == NBA:
+        url = f"{nba.BASE}/summary?event={event_id}"
+    else:
+        slug = liga_slug or "eng.1"
+        url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{slug}/summary?event={event_id}"
+    return _descargar_json(url)
+
+
+_STAT_NOMBRES = {
+    "FG%": "% Tiros de campo", "fieldGoalPct": "% Tiros de campo",
+    "3P%": "% Triples", "threePointFieldGoalPct": "% Triples",
+    "FT%": "% Tiros libres", "freeThrowPct": "% Tiros libres",
+    "REB": "Rebotes", "totalRebounds": "Rebotes",
+    "OREB": "Rebotes ofensivos", "offensiveRebounds": "Rebotes ofensivos",
+    "AST": "Asistencias", "assists": "Asistencias",
+    "STL": "Robos", "steals": "Robos",
+    "BLK": "Tapones", "blocks": "Tapones",
+    "TO": "Pérdidas", "turnovers": "Pérdidas",
+    "Points in Paint": "Puntos en pintura", "pointsInPaint": "Puntos en pintura",
+    "Fast Break Points": "Puntos al contraataque",
+    "Possession": "Posesión", "possessionPct": "Posesión %",
+    "Shots": "Tiros totales", "totalShots": "Tiros totales",
+    "Shots on Target": "Tiros al arco", "shotsOnTarget": "Tiros al arco",
+    "Corner Kicks": "Córners", "wonCorners": "Córners",
+    "Fouls": "Faltas", "foulsCommitted": "Faltas",
+    "Yellow Cards": "Tarjetas amarillas", "yellowCards": "Tarjetas amarillas",
+    "Red Cards": "Tarjetas rojas", "redCards": "Tarjetas rojas",
+    "Offsides": "Fueras de juego", "offsides": "Fueras de juego",
+}
+
+
+def _parsear_estadisticas_y_alineacion(resumen_json, m):
+    """Extrae parciales, estadísticas de equipo y alineaciones/quintetos desde el JSON de summary."""
+    out = {"cuartos": {"h": [], "a": []}, "stats": [], "alineaciones": {}}
+    if not isinstance(resumen_json, dict):
+        return out
+
+    hid = str(m["home"].get("id") or "")
+    aid = str(m["away"].get("id") or "")
+
+    # 1. Parciales (cuartos / tiempos)
+    comps = (resumen_json.get("header") or {}).get("competitions") or []
+    if comps:
+        for comp in (comps[0].get("competitors") or []):
+            tid = str((comp.get("team") or {}).get("id") or comp.get("id") or "")
+            ls = [str(x.get("displayValue") or x.get("value") or "0") for x in (comp.get("linescores") or [])]
+            if tid == hid:
+                out["cuartos"]["h"] = ls
+            elif tid == aid:
+                out["cuartos"]["a"] = ls
+
+    # 2. Estadísticas de equipo comparadas
+    box = resumen_json.get("boxscore") or {}
+    equipos_box = box.get("teams") or []
+    mapa_stats = {}
+    orden_claves = []
+    for tb in equipos_box:
+        tid = str((tb.get("team") or {}).get("id") or "")
+        lado = "h" if tid == hid else ("a" if tid == aid else None)
+        if not lado:
+            continue
+        for st_item in (tb.get("statistics") or []):
+            raw_k = str(st_item.get("name") or st_item.get("label") or "")
+            lbl = _STAT_NOMBRES.get(raw_k) or _STAT_NOMBRES.get(st_item.get("label") or "") or st_item.get("label") or raw_k
+            val = str(st_item.get("displayValue") or "")
+            if not lbl or not val:
+                continue
+            if lbl not in mapa_stats:
+                mapa_stats[lbl] = {"h": "–", "a": "–"}
+                orden_claves.append(lbl)
+            mapa_stats[lbl][lado] = val
+    for lbl in orden_claves[:10]:
+        out["stats"].append((lbl, mapa_stats[lbl]["h"], mapa_stats[lbl]["a"]))
+
+    # 3. Alineación NBA (boxscore.players)
+    for pb in (box.get("players") or []):
+        tid = str((pb.get("team") or {}).get("id") or "")
+        lado = "h" if tid == hid else ("a" if tid == aid else None)
+        if not lado:
+            continue
+        titulares, suplentes = [], []
+        bloques = pb.get("statistics") or []
+        if bloques:
+            b0 = bloques[0]
+            cols = [str(c).upper() for c in (b0.get("names") or [])]
+            idx_min = cols.index("MIN") if "MIN" in cols else -1
+            idx_pts = cols.index("PTS") if "PTS" in cols else -1
+            idx_reb = cols.index("REB") if "REB" in cols else -1
+            idx_ast = cols.index("AST") if "AST" in cols else -1
+            for ath in (b0.get("athletes") or []):
+                info_a = ath.get("athlete") or {}
+                nom = info_a.get("shortName") or info_a.get("displayName") or ""
+                if not nom:
+                    continue
+                pos = (info_a.get("position") or {}).get("abbreviation") or ""
+                dorsal = info_a.get("jersey") or ""
+                pid = str(info_a.get("id") or "")
+                vals = ath.get("stats") or []
+                partes = []
+                if 0 <= idx_pts < len(vals):
+                    partes.append(f"{vals[idx_pts]} pts")
+                if 0 <= idx_reb < len(vals):
+                    partes.append(f"{vals[idx_reb]} reb")
+                if 0 <= idx_ast < len(vals):
+                    partes.append(f"{vals[idx_ast]} ast")
+                if 0 <= idx_min < len(vals) and vals[idx_min] not in ("0", "00", ""):
+                    partes.append(f"{vals[idx_min]} min")
+                fila = {
+                    "id": pid,
+                    "nom": nom,
+                    "pos": pos,
+                    "dorsal": dorsal,
+                    "stats": " · ".join(partes) if partes else ("DNP" if ath.get("didNotPlay") else ""),
+                }
+                if ath.get("starter"):
+                    titulares.append(fila)
+                else:
+                    suplentes.append(fila)
+        out["alineaciones"][lado] = {"formacion": "", "titulares": titulares, "suplentes": suplentes}
+
+    # 4. Alineación Fútbol (rosters)
+    if not out["alineaciones"]:
+        for rb in (resumen_json.get("rosters") or []):
+            tid = str((rb.get("team") or {}).get("id") or "")
+            lado = "h" if tid == hid else ("a" if tid == aid else None)
+            if not lado:
+                continue
+            titulares, suplentes = [], []
+            for pl in (rb.get("roster") or []):
+                info_a = pl.get("athlete") or {}
+                nom = info_a.get("shortName") or info_a.get("displayName") or ""
+                if not nom:
+                    continue
+                pos = (pl.get("position") or info_a.get("position") or {}).get("abbreviation") or ""
+                dorsal = pl.get("jersey") or info_a.get("jersey") or ""
+                fila = {"id": str(info_a.get("id") or ""), "nom": nom, "pos": pos, "dorsal": str(dorsal), "stats": ""}
+                if pl.get("starter"):
+                    titulares.append(fila)
+                else:
+                    suplentes.append(fila)
+            out["alineaciones"][lado] = {
+                "formacion": str(rb.get("formation") or ""),
+                "titulares": titulares,
+                "suplentes": suplentes,
+            }
+
+    return out
+
+
+def _num_val(s):
+    """Convierte '45.2%' o '12' a float para calcular el ancho relativo de la barra comparativa."""
+    try:
+        return float(str(s).replace("%", "").strip())
+    except Exception:  # noqa: BLE001
+        return None
+
+
+@st.dialog("Centro del partido", width="large")
 def _mostrar_detalle_partido(m):
-    """Modal interactivo sin salir de Inicio: forma reciente, línea, cara a cara y bajas clave."""
+    """Modal interactivo con marcador, estadísticas en vivo, alineaciones, línea, forma y bajas."""
     h, a = m["home"], m["away"]
     st.markdown(f"**{_esc(m['liga'])}** · {_esc(m['hora'])}")
-    c1, c2, c3 = st.columns([2, 1, 2], vertical_alignment="center")
+    c1, c2, c3 = st.columns([2, 1.1, 2], vertical_alignment="center")
     with c1:
         if h["logo"]:
-            st.image(h["logo"], width=48)
+            st.image(h["logo"], width=50)
         st.markdown(f"### {h['nombre']}")
     with c2:
         marc = f"{h['score']} - {a['score']}" if m["state"] in ("in", "post") else "vs"
-        st.markdown(f"<div style='text-align:center;font-family:var(--pl-font-mono);font-size:1.5rem;font-weight:700;'>{_esc(marc)}</div>", unsafe_allow_html=True)
+        badge = '<div style="display:inline-block;padding:2px 8px;border-radius:999px;background:#FFF1F2;color:#E11D48;border:1px solid #FECDD3;font-size:.7rem;font-weight:700;margin-bottom:4px;">EN VIVO</div>' if m["state"] == "in" else ""
+        st.markdown(
+            f"<div style='text-align:center;'>{badge}<div style='font-family:var(--pl-font-mono);font-size:1.65rem;font-weight:800;color:#0F172A;'>{_esc(marc)}</div></div>",
+            unsafe_allow_html=True,
+        )
     with c3:
         if a["logo"]:
-            st.image(a["logo"], width=48)
+            st.image(a["logo"], width=50)
         st.markdown(f"### {a['nombre']}")
 
-    # Barra de probabilidad (solo Pro; en plan gratuito se oculta con dato falso desenfocado)
-    if planes.es_pro():
+    resumen_json = None
+    if m.get("id"):
+        with st.spinner("Cargando estadísticas en vivo y alineaciones…"):
+            resumen_json = _resumen_evento(m["id"], m["deporte"], m.get("liga_slug", ""))
+    parsed = _parsear_estadisticas_y_alineacion(resumen_json, m)
+
+    # Parciales por cuarto/tiempo si existen
+    ch, ca = parsed["cuartos"]["h"], parsed["cuartos"]["a"]
+    if ch and ca and len(ch) == len(ca):
+        pref = "Q" if m["deporte"] == NBA else "T"
+        cols_th = "".join(f"<th>{pref}{i + 1}</th>" for i in range(len(ch)))
+        cols_h = "".join(f"<td>{_esc(v)}</td>" for v in ch)
+        cols_a = "".join(f"<td>{_esc(v)}</td>" for v in ca)
         st.markdown(
-            f'<div class="sl-prob-wrap"><div class="sl-prob-labels">'
-            f'<span>{h["abrev"] or h["nombre"]} {m["prob_h"]}%</span>'
-            f'<span>Prob. de victoria</span>'
-            f'<span>{m["prob_a"]}% {a["abrev"] or a["nombre"]}</span></div>'
-            f'<div class="sl-prob-bar"><div class="sl-prob-home" style="width:{m["prob_h"]}%;"></div>'
-            f'<div class="sl-prob-away" style="width:{m["prob_a"]}%;"></div></div></div>',
+            f"<div style='overflow-x:auto;margin:6px 0 10px;'>"
+            f"<table style='width:100%;border-collapse:collapse;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;font-size:.82rem;text-align:center;'>"
+            f"<thead><tr style='background:#F8FAFC;color:#64748B;border-bottom:1px solid #E2E8F0;'><th style='text-align:left;padding:6px 10px;'>Equipo</th>{cols_th}<th style='padding:6px 10px;'>Total</th></tr></thead>"
+            f"<tbody>"
+            f"<tr style='border-bottom:1px solid #F1F5F9;'><td style='text-align:left;padding:6px 10px;font-weight:700;color:#0F172A;'>{_esc(h['abrev'] or h['nombre'])}</td>{cols_h}<td style='font-weight:800;color:#4F46E5;'>{_esc(h['score'])}</td></tr>"
+            f"<tr><td style='text-align:left;padding:6px 10px;font-weight:700;color:#0F172A;'>{_esc(a['abrev'] or a['nombre'])}</td>{cols_a}<td style='font-weight:800;color:#0F172A;'>{_esc(a['score'])}</td></tr>"
+            f"</tbody></table></div>",
             unsafe_allow_html=True,
         )
-    else:
-        st.markdown(
-            planes.html_bloque_pro(
-                "Probabilidad de victoria",
-                "",
-                "EQU 55% · Prob. de victoria · 45% RIV",
-            ),
-            unsafe_allow_html=True,
-        )
 
-    # Línea recomendada / Over-Under (solo Pro: en gratis se envía dato de relleno desenfocado)
-    linea_real = []
-    if m.get("linea_txt"):
-        linea_real.append(f"Hándicap {m['linea_txt']}")
-    if m.get("linea_total") is not None:
-        linea_real.append(f"Total {m['linea_total']}")
-    txt_real = " · ".join(linea_real) if linea_real else "Sin línea publicada aún"
-    planes.bloque_pro(
-        "Línea recomendada y Over/Under",
-        txt_real,
-        "Hándicap -3.5 · Total 218.5 · 64% acierto",
-        key=f"det_pro_{m['id']}",
-        en_dialogo=True,
-    )
+    tab_stats, tab_alin, tab_forma = st.tabs(["📊 Estadísticas en vivo", "👥 Alineación y jugadores", "📈 Forma, líneas y bajas"])
 
-    # Forma reciente, cara a cara y jugadores clave (NBA vía favoritos_datos)
-    if m["deporte"] == NBA and h.get("id") and a.get("id"):
-        with st.spinner("Cargando forma reciente, cara a cara y bajas…"):
-            cal_h = fd.calendario_seguro(h["id"])
-            cal_a = fd.calendario_seguro(a["id"])
-            les = fd.lesiones()
-
-        col_fh, col_fa = st.columns(2)
-        for col, nom, cal in ((col_fh, h["nombre"], cal_h), (col_fa, a["nombre"], cal_a)):
-            with col:
-                st.markdown(f"**Forma reciente · {nom}**")
-                forma = cal.get("forma") or []
-                if forma:
-                    chips = "".join(
-                        f'<span class="sl-gp {"g" if g["res"] == "G" else "p"}" title="{_esc(g["rival"])} {g["pf"]}-{g["pc"]}">{g["res"]}</span>'
-                        for g in forma
-                    )
-                    st.markdown(f'<div class="sl-gp-row">{chips}</div>', unsafe_allow_html=True)
-                    ult = forma[0]
-                    st.caption(f"Último: {'vs' if ult['local'] else '@'} {ult['rival']} ({ult['pf']}-{ult['pc']})")
+    with tab_stats:
+        if parsed["stats"]:
+            rows_html = []
+            for lbl, vh, va in parsed["stats"]:
+                nh, na = _num_val(vh), _num_val(va)
+                if nh is not None and na is not None and (nh + na) > 0:
+                    pw_h = round(100 * nh / (nh + na), 1)
                 else:
-                    st.caption("Sin partidos recientes registrados.")
+                    pw_h = 50.0
+                rows_html.append(
+                    f"<div style='margin-bottom:10px;'>"
+                    f"<div style='display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;color:#0F172A;margin-bottom:4px;'>"
+                    f"<span>{_esc(vh)}</span><span style='font-weight:600;color:#64748B;'>{_esc(lbl)}</span><span>{_esc(va)}</span>"
+                    f"</div>"
+                    f"<div style='display:flex;height:6px;border-radius:999px;overflow:hidden;background:#F1F5F9;'>"
+                    f"<div style='width:{pw_h}%;background:#4F46E5;'></div>"
+                    f"<div style='flex:1;background:#CBD5E1;'></div>"
+                    f"</div></div>"
+                )
+            st.markdown(
+                f"<div style='background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;padding:14px 16px;'>{''.join(rows_html)}</div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.info("Las estadísticas en vivo estarán disponibles en cuanto comience el partido.")
 
-        # Cara a cara dentro del historial reciente
-        h2h = [g for g in (cal_h.get("forma") or []) if str(g.get("rival_id")) == str(a["id"])]
-        if h2h:
-            st.markdown("**Últimos cruces directos encontrados**")
-            for g in h2h[:3]:
-                st.caption(f"{'Victoria' if g['res'] == 'G' else 'Derrota'} de {h['nombre']} · {g['pf']}-{g['pc']}")
+    with tab_alin:
+        alin_h = parsed["alineaciones"].get("h")
+        alin_a = parsed["alineaciones"].get("a")
+        if (alin_h and (alin_h["titulares"] or alin_h["suplentes"])) or (alin_a and (alin_a["titulares"] or alin_a["suplentes"])):
+            ca1, ca2 = st.columns(2)
+            for col_a, eq_inf, alin in ((ca1, h, alin_h), (ca2, a, alin_a)):
+                with col_a:
+                    form_txt = f" · `{alin['formacion']}`" if alin and alin.get("formacion") else ""
+                    st.markdown(f"**{eq_inf['nombre']}**{form_txt}")
+                    if not alin or (not alin["titulares"] and not alin["suplentes"]):
+                        st.caption("Sin datos de alineación.")
+                        continue
+                    if alin["titulares"]:
+                        st.caption("Titulares")
+                        filas_t = "".join(
+                            f"<div style='display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-bottom:1px solid #F1F5F9;font-size:.8rem;'>"
+                            f"<span><b style='color:#4F46E5;'>{_esc(f['dorsal'] or '•')}</b> <b style='color:#0F172A;'>{_esc(f['nom'])}</b> "
+                            f"<span style='color:#64748B;font-size:.72rem;'>{_esc(f['pos'])}</span></span>"
+                            f"<span style='font-family:var(--pl-font-mono);font-size:.73rem;color:#334155;'>{_esc(f['stats'])}</span>"
+                            f"</div>"
+                            for f in alin["titulares"]
+                        )
+                        st.markdown(f"<div style='background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;margin-bottom:8px;'>{filas_t}</div>", unsafe_allow_html=True)
+                    if alin["suplentes"]:
+                        with st.expander(f"Banca / Suplentes ({len(alin['suplentes'])})"):
+                            filas_s = "".join(
+                                f"<div style='display:flex;justify-content:space-between;align-items:center;padding:4px 6px;border-bottom:1px solid #F1F5F9;font-size:.78rem;'>"
+                                f"<span><span style='color:#64748B;'>{_esc(f['dorsal'] or '•')}</span> {_esc(f['nom'])} "
+                                f"<span style='color:#94A3B8;font-size:.7rem;'>{_esc(f['pos'])}</span></span>"
+                                f"<span style='font-family:var(--pl-font-mono);font-size:.72rem;color:#475569;'>{_esc(f['stats'])}</span>"
+                                f"</div>"
+                                for f in alin["suplentes"]
+                            )
+                            st.markdown(f"<div>{filas_s}</div>", unsafe_allow_html=True)
+        else:
+            st.info("Alineación oficial aún no publicada (se habilita cerca del inicio del partido).")
 
-        # Jugadores clave / bajas
-        if les is not None:
-            bajas_h = [x for x in les.values() if x["equipo_id"] == str(h["id"])][:3]
-            bajas_a = [x for x in les.values() if x["equipo_id"] == str(a["id"])][:3]
-            if bajas_h or bajas_a:
-                st.markdown("**Jugadores en reporte de lesiones**")
-                for x in bajas_h + bajas_a:
-                    st.caption(f"• {x['nombre']} — {x['estado']} ({x['lesion'] or 'sin detalle'})")
-            else:
-                st.caption("Sin bajas relevantes reportadas para ambos equipos.")
+    with tab_forma:
+        # Barra de probabilidad (solo Pro; en plan gratuito se oculta con dato falso desenfocado)
+        if planes.es_pro():
+            st.markdown(
+                f'<div class="sl-prob-wrap"><div class="sl-prob-labels">'
+                f'<span>{h["abrev"] or h["nombre"]} {m["prob_h"]}%</span>'
+                f'<span>Prob. de victoria</span>'
+                f'<span>{m["prob_a"]}% {a["abrev"] or a["nombre"]}</span></div>'
+                f'<div class="sl-prob-bar"><div class="sl-prob-home" style="width:{m["prob_h"]}%;"></div>'
+                f'<div class="sl-prob-away" style="width:{m["prob_a"]}%;"></div></div></div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                planes.html_bloque_pro(
+                    "Probabilidad de victoria",
+                    "",
+                    "EQU 55% · Prob. de victoria · 45% RIV",
+                ),
+                unsafe_allow_html=True,
+            )
+
+        linea_real = []
+        if m.get("linea_txt"):
+            linea_real.append(f"Hándicap {m['linea_txt']}")
+        if m.get("linea_total") is not None:
+            linea_real.append(f"Total {m['linea_total']}")
+        txt_real = " · ".join(linea_real) if linea_real else "Sin línea publicada aún"
+        planes.bloque_pro(
+            "Línea recomendada y Over/Under",
+            txt_real,
+            "Hándicap -3.5 · Total 218.5 · 64% acierto",
+            key=f"det_pro_{m['id']}",
+            en_dialogo=True,
+        )
+
+        # Forma reciente, cara a cara y jugadores clave (NBA vía favoritos_datos)
+        if m["deporte"] == NBA and h.get("id") and a.get("id"):
+            with st.spinner("Cargando forma reciente, cara a cara y bajas…"):
+                cal_h = fd.calendario_seguro(h["id"])
+                cal_a = fd.calendario_seguro(a["id"])
+                les = fd.lesiones()
+
+            col_fh, col_fa = st.columns(2)
+            for col, nom, cal in ((col_fh, h["nombre"], cal_h), (col_fa, a["nombre"], cal_a)):
+                with col:
+                    st.markdown(f"**Forma reciente · {nom}**")
+                    forma = cal.get("forma") or []
+                    if forma:
+                        chips = "".join(
+                            f'<span class="sl-gp {"g" if g["res"] == "G" else "p"}" title="{_esc(g["rival"])} {g["pf"]}-{g["pc"]}">{g["res"]}</span>'
+                            for g in forma
+                        )
+                        st.markdown(f'<div class="sl-gp-row">{chips}</div>', unsafe_allow_html=True)
+                        ult = forma[0]
+                        st.caption(f"Último: {'vs' if ult['local'] else '@'} {ult['rival']} ({ult['pf']}-{ult['pc']})")
+                    else:
+                        st.caption("Sin partidos recientes registrados.")
+
+            h2h = [g for g in (cal_h.get("forma") or []) if str(g.get("rival_id")) == str(a["id"])]
+            if h2h:
+                st.markdown("**Últimos cruces directos encontrados**")
+                for g in h2h[:3]:
+                    st.caption(f"{'Victoria' if g['res'] == 'G' else 'Derrota'} de {h['nombre']} · {g['pf']}-{g['pc']}")
+
+            if les is not None:
+                bajas_h = [x for x in les.values() if x["equipo_id"] == str(h["id"])][:3]
+                bajas_a = [x for x in les.values() if x["equipo_id"] == str(a["id"])][:3]
+                if bajas_h or bajas_a:
+                    st.markdown("**Jugadores en reporte de lesiones**")
+                    for x in bajas_h + bajas_a:
+                        st.caption(f"• {x['nombre']} — {x['estado']} ({x['lesion'] or 'sin detalle'})")
+                else:
+                    st.caption("Sin bajas relevantes reportadas para ambos equipos.")
 
 
 def _tiempo_restante(fecha_iso):

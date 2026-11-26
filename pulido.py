@@ -1088,13 +1088,18 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   border-radius: 7px;
   padding: 4px 10px;
   font-size: .78rem;
-  color: #F8FAFC;
+  color: #F8FAFC !important;
+  text-decoration: none !important;
+  cursor: pointer;
   flex-shrink: 0;
-  transition: background .15s ease, border-color .15s ease;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
 }
 .ticker-chip:hover {
-  background: rgba(255,255,255,.15);
-  border-color: rgba(196,181,253,.4);
+  background: rgba(255,255,255,.16);
+  border-color: rgba(196,181,253,.55);
+  transform: translateY(-1px);
+  color: #FFFFFF !important;
+  text-decoration: none !important;
 }
 .ticker-chip.is-live {
   background: rgba(225,29,72,.16);
@@ -2816,12 +2821,15 @@ def ticker_superior(partidos=None):
                 marc = ""
                 hora_raw = str(m.get("hora") or "Hoy").strip()
                 hora_html = f'<span class="ticker-time">{_esc(hora_raw)}</span>'
+            mid = _esc(str(m.get("id") or ""))
+            tag_open = f'<a class="{cls}" href="?partido={mid}" target="_self" title="Ver estadísticas en vivo y alineación">' if mid else f'<div class="{cls}">'
+            tag_close = '</a>' if mid else '</div>'
             chips.append(
-                f'<div class="{cls}">'
+                f'{tag_open}'
                 f'<span class="ticker-sport">{icono}</span>'
                 f'<span class="ticker-teams">{_esc(h_ab)} vs {_esc(a_ab)}</span>'
                 f'{marc}{hora_html}'
-                f'</div>'
+                f'{tag_close}'
             )
         chips_html = "".join(chips)
         resumen = f"{en_vivo} en vivo · {total} hoy" if en_vivo else f"{total} partidos hoy"

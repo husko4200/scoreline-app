@@ -212,8 +212,12 @@ st.sidebar.markdown('<div class="sl-nav-label">EXPLORAR</div>', unsafe_allow_htm
 # Si quedó guardada una sección que ya no existe, se vuelve al inicio.
 _MAP_QUERY = {"inicio": INICIO, "vivo": VIVO, "expected": EXPECTED, "nba": NBA, "futbol": FUTBOL, "tenis": TENIS, "diag": DIAGNOSTICO}
 _q_sec = str(st.query_params.get("sec", "") or "").lower()
+_q_partido = str(st.query_params.get("partido", "") or "").strip()
 if _q_sec in _MAP_QUERY:
     st.session_state["seccion"] = _MAP_QUERY[_q_sec]
+if _q_partido:
+    st.session_state["_abrir_partido_id"] = _q_partido
+if _q_sec or _q_partido:
     st.query_params.clear()
 if st.session_state.get("seccion") not in SECCIONES:
     st.session_state["seccion"] = INICIO
@@ -290,6 +294,12 @@ except Exception:  # noqa: BLE001
     _partidos_ticker = []
 pulido.ticker_superior(_partidos_ticker)
 planes.banner_plan_header()
+
+_abrir_pid = st.session_state.pop("_abrir_partido_id", None)
+if _abrir_pid:
+    _m_click = next((m for m in _partidos_ticker if str(m.get("id")) == str(_abrir_pid)), None)
+    if _m_click is not None:
+        inicio._mostrar_detalle_partido(_m_click)
 
 # Cada sección apunta a la función que la dibuja.
 PAGINAS = {
