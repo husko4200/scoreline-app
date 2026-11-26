@@ -577,7 +577,7 @@ def _num_val(s):
 
 
 @st.dialog("Centro del partido", width="large")
-def _mostrar_detalle_partido(m):
+def _mostrar_detalle_partido(m, permitir_gratis: bool = False):
     """Modal interactivo con marcador, estadísticas en vivo, alineaciones, línea, forma y bajas."""
     h, a = m["home"], m["away"]
     st.markdown(f"**{_esc(m['liga'])}** · {_esc(m['hora'])}")
@@ -688,8 +688,16 @@ def _mostrar_detalle_partido(m):
             st.info("Alineación oficial aún no publicada (se habilita cerca del inicio del partido).")
 
     with tab_forma:
-        # Barra de probabilidad (solo Pro; en plan gratuito se oculta con dato falso desenfocado)
-        if planes.es_pro():
+        # Barra de probabilidad (solo Pro o partido gratuito de muestra)
+        tiene_acceso = planes.es_pro() or permitir_gratis
+        if permitir_gratis and not planes.es_pro():
+            st.markdown(
+                '<div style="display:inline-block;padding:3px 10px;border-radius:999px;background:#ECFDF5;'
+                'color:#047857;border:1px solid #A7F3D0;font-size:.74rem;font-weight:700;margin-bottom:8px;">'
+                '🎁 Análisis gratuito de muestra desbloqueado</div>',
+                unsafe_allow_html=True,
+            )
+        if tiene_acceso:
             st.markdown(
                 f'<div class="sl-prob-wrap"><div class="sl-prob-labels">'
                 f'<span>{h["abrev"] or h["nombre"]} {m["prob_h"]}%</span>'
@@ -715,13 +723,22 @@ def _mostrar_detalle_partido(m):
         if m.get("linea_total") is not None:
             linea_real.append(f"Total {m['linea_total']}")
         txt_real = " · ".join(linea_real) if linea_real else "Sin línea publicada aún"
-        planes.bloque_pro(
-            "Línea recomendada y Over/Under",
-            txt_real,
-            "Hándicap -3.5 · Total 218.5 · 64% acierto",
-            key=f"det_pro_{m['id']}",
-            en_dialogo=True,
-        )
+        if tiene_acceso:
+            st.markdown(
+                f'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 14px;margin:8px 0;">'
+                f'<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#64748B;margin-bottom:2px;">Línea recomendada y Over/Under</div>'
+                f'<div style="font-size:.9rem;font-weight:700;color:#0F172A;">{_esc(txt_real)}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            planes.bloque_pro(
+                "Línea recomendada y Over/Under",
+                txt_real,
+                "Hándicap -3.5 · Total 218.5 · 64% acierto",
+                key=f"det_pro_{m['id']}",
+                en_dialogo=True,
+            )
 
         # Forma reciente, cara a cara y jugadores clave (NBA vía favoritos_datos)
         if m["deporte"] == NBA and h.get("id") and a.get("id"):

@@ -630,7 +630,11 @@ def _render_lista_compacta(deporte):
     orden_est = {"in": 0, "pre": 1, "post": 2}
     filtrados.sort(key=lambda m: (orden_est.get(m["state"], 3), m.get("fecha") or ""))
 
-    c_h, _ = st.columns([4.8, 1.15], vertical_alignment="center")
+    es_pro = planes.es_pro()
+    if not es_pro:
+        st.caption("🎁 Plan gratuito: tienes **1 partido gratis** para verificar completo. Los demás requieren **ScoreLine Pro**.")
+
+    c_h, _ = st.columns([4.8, 1.25], vertical_alignment="center")
     c_h.markdown(
         '<div class="sl-list-head">'
         '<span>Fecha y hora</span><span>Partido</span><span style="text-align:center;">Liga</span><span style="text-align:right;">Marcador</span>'
@@ -638,8 +642,7 @@ def _render_lista_compacta(deporte):
         unsafe_allow_html=True,
     )
 
-    es_pro = planes.es_pro()
-    for m in filtrados[:14]:
+    for idx, m in enumerate(filtrados[:14]):
         h, a = m["home"], m["away"]
         fecha_txt = _fmt_hora_corta_chile(m.get("fecha"))
         if m["state"] == "in":
@@ -652,7 +655,7 @@ def _render_lista_compacta(deporte):
             hora_lbl = fecha_txt
             time_cls = "sl-list-time"
 
-        c_row, c_btn = st.columns([4.8, 1.15], vertical_alignment="center")
+        c_row, c_btn = st.columns([4.8, 1.25], vertical_alignment="center")
         with c_row:
             sc_h = _esc(h["score"]) if m["state"] in ("in", "post") else "–"
             sc_a = _esc(a["score"]) if m["state"] in ("in", "post") else "–"
@@ -672,10 +675,8 @@ def _render_lista_compacta(deporte):
             </div>
             """).strip(), unsafe_allow_html=True)
         with c_btn:
-            if m["state"] == "pre" and not es_pro:
-                if st.button("🔒 Pro", key=f"exp_lock_{m['id']}", help="Pronóstico disponible en ScoreLine Pro", use_container_width=True):
-                    planes.modal_pro()
-            else:
+            es_gratis_muestra = (not es_pro) and (idx == 0)
+            if es_pro:
                 if st.button("Verificar", key=f"exp_ver_{m['id']}", use_container_width=True):
                     inicio._mostrar_detalle_partido({
                         **m,
@@ -683,6 +684,19 @@ def _render_lista_compacta(deporte):
                         "prob_h": m.get("prob_h", 52),
                         "prob_a": m.get("prob_a", 48),
                     })
+            elif es_gratis_muestra:
+                if st.button("✓ Gratis", key=f"exp_ver_{m['id']}", type="primary",
+                             help="1 partido gratuito para verificar estadísticas, alineación y líneas", use_container_width=True):
+                    inicio._mostrar_detalle_partido({
+                        **m,
+                        "hora": _fmt_fecha_chile(m.get("fecha")),
+                        "prob_h": m.get("prob_h", 52),
+                        "prob_a": m.get("prob_a", 48),
+                    }, permitir_gratis=True)
+            else:
+                if st.button("🔒 Premium", key=f"exp_lock_{m['id']}",
+                             help="Disponible con ScoreLine Pro", use_container_width=True):
+                    planes.modal_pro("Desbloquea la verificación y análisis completo de todos los partidos con ScoreLine Pro.")
 
 
 def render():
