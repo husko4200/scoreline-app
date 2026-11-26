@@ -376,3 +376,4 @@ def modal_chat(seccion_actual: str = "") -> None:
         if ok and not es_pro:
             _incrementar_uso_hoy()
         st.rerun()
+
