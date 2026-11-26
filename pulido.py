@@ -1000,6 +1000,72 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
   color: #4338CA;
   font-weight: 700;
 }
+.sl-lock-panel {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 4px 0 12px;
+  box-shadow: 0 4px 14px -6px rgba(15, 23, 42, .06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sl-lock-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sl-lock-lbl {
+  font-size: .76rem;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.sl-lock-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.sl-chip-free {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+  color: #FFFFFF;
+  font-size: .84rem;
+  font-weight: 700;
+  box-shadow: 0 3px 10px -2px rgba(79, 70, 229, .35);
+}
+.sl-chip-blur-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  cursor: not-allowed;
+  user-select: none;
+}
+.sl-chip-blur-txt {
+  color: #334155;
+  font-size: .83rem;
+  font-weight: 600;
+  filter: blur(2.6px);
+  opacity: .65;
+  pointer-events: none;
+}
+.sl-chip-lock-ico {
+  font-size: .75rem;
+  line-height: 1;
+  opacity: .9;
+}
 /* Al hacer clic para escribir en cualquier selectbox, oculta el texto fantasma del equipo anterior */
 [data-testid="stMain"] [data-baseweb="select"]:focus-within div:has(> input) > div:not(:has(input)) {
   opacity: 0 !important;

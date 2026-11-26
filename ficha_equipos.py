@@ -1908,12 +1908,32 @@ def render():
         )
         mercado = "Puntos del equipo"
         ventana = 5
-        planes.bloque_pro(
-            "Todos los mercados y ventanas de 10 a 25 partidos",
-            "Cuartos, tiros, hándicaps, enfrentamientos directos y ventanas amplias están disponibles en ScoreLine Pro.",
-            "Cuartos · Tiros · Hándicaps · Últimos 10/15/20/25 PJ",
-            key="lock_fe_mercados",
+        otros_grupos = [g for g in GRUPOS_MERCADO if g != "🏀 Puntos"]
+        otros_mercados = [m for m in GRUPOS_MERCADO["🏀 Puntos"] if m != "Puntos del equipo"]
+        otras_ventanas = [f"Últimos {v}" for v in (10, 15, 20, 25)] + (["⚔️ Enfrentamientos directos"] if idb else [])
+
+        def _chips_blur(items):
+            return "".join(
+                f'<span class="sl-chip-blur-wrap" title="Disponible en ScoreLine Pro">'
+                f'<span class="sl-chip-lock-ico">🔒</span>'
+                f'<span class="sl-chip-blur-txt">{_e(it)}</span></span>'
+                for it in items
+            )
+
+        st.markdown(
+            '<div class="sl-lock-panel">'
+            '<div class="sl-lock-row"><span class="sl-lock-lbl">Tipo de mercado</span>'
+            f'<div class="sl-lock-chips"><span class="sl-chip-free">✓ 🏀 Puntos (PTS)</span>{_chips_blur(otros_grupos)}</div></div>'
+            '<div class="sl-lock-row"><span class="sl-lock-lbl">Mercado</span>'
+            f'<div class="sl-lock-chips"><span class="sl-chip-free">✓ Puntos del equipo (PTS)</span>{_chips_blur(otros_mercados)}</div></div>'
+            '<div class="sl-lock-row"><span class="sl-lock-lbl">Partidos a analizar</span>'
+            f'<div class="sl-lock-chips"><span class="sl-chip-free">✓ Últimos 5</span>{_chips_blur(otras_ventanas)}</div></div>'
+            '</div>',
+            unsafe_allow_html=True,
         )
+        if st.button("🔒 Desbloquear todos los mercados y ventanas con ScoreLine Pro",
+                     key="lock_fe_mercados", use_container_width=True):
+            planes.modal_pro()
     h2h = ventana == "h2h"
     sin_ot = st.toggle("Excluir partidos con tiempo extra", key="fe_sin_ot",
                        help="Los puntos del partido y casi todas las estadísticas incluyen el tiempo extra; los mercados de cuartos y "
