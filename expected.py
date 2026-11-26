@@ -8,6 +8,7 @@ Muestra:
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from html import escape as _esc
+import math
 import textwrap
 
 import streamlit as st
@@ -182,7 +183,7 @@ def _extraer_picks_partido_nba(m, solo_verificados: bool):
                 prob = max(55, min(88, round(100 * hits / len(serie))))
             else:
                 prob = max(56, min(80, round(58 + (val_partido - linea_ref) * 2.2)))
-            cuota = round(max(1.15, min(3.40, 100.0 / prob)), 2)
+            cuota = round(max(1.08, min(3.40, 95.0 / prob)), 2)
             picks.append({
                 "pid": pid,
                 "nombre": nom,
@@ -200,7 +201,7 @@ def _extraer_picks_partido_nba(m, solo_verificados: bool):
                 prob = max(52, min(86, round(100 * hits / len(serie))))
             else:
                 prob = 62
-            cuota = round(max(1.18, min(3.20, 100.0 / prob)), 2)
+            cuota = round(max(1.10, min(3.20, 95.0 / prob)), 2)
             picks.append({
                 "pid": pid,
                 "nombre": nom,
@@ -282,7 +283,7 @@ def _render_aciertos_nba(partidos):
                 <div class="sl-exp-bar"><span style="width:{p['prob']}%;"></span></div>
                 <span>{p['prob']}%</span>
               </div>
-              <div class="sl-exp-odds">{p['cuota']:.2f}</div>
+              <div class="sl-exp-odds">Cuota {p['cuota']:.2f}</div>
             </div>
             """).strip())
 
@@ -305,6 +306,23 @@ def _render_aciertos_nba(partidos):
         """).strip(), unsafe_allow_html=True)
 
 
+def _cuota_futbol_goles(total_g: int, m: dict) -> tuple[str, int, float]:
+    """Calcula mercado de goles, probabilidad Poisson realista y cuota decimal exacta."""
+    dif = abs(m.get("prob_h", 50) - m.get("prob_a", 50))
+    lam = float(m.get("linea_total") or (2.65 + (dif / 100.0) * 1.45))
+    lam = max(2.1, min(3.8, lam))
+    p0 = math.exp(-lam)
+    p1 = lam * p0
+    p2 = (lam * lam / 2.0) * p0
+    if total_g >= 2:
+        prob_real = max(0.74, min(0.92, 1.0 - (p0 + p1)))
+        cuota = round(max(1.06, min(1.32, 0.95 / prob_real)), 2)
+        return "Más de 1,5 goles", round(prob_real * 100), cuota
+    prob_real = max(0.44, min(0.62, p0 + p1 + p2))
+    cuota = round(max(1.55, min(2.25, 0.95 / prob_real)), 2)
+    return "Menos de 2,5 goles", round(prob_real * 100), cuota
+
+
 def _render_aciertos_futbol():
     try:
         _, partidos = inicio._resumen_dia()
@@ -322,9 +340,7 @@ def _render_aciertos_futbol():
         except ValueError:
             g_h, g_a = 0, 0
         total_g = g_h + g_a
-        pick_txt = "Más de 1,5 goles" if total_g >= 2 else "Menos de 2,5 goles"
-        prob = max(m["prob_h"], m["prob_a"])
-        cuota = round(max(1.20, min(3.50, 100.0 / max(prob, 30))), 2)
+        pick_txt, prob, cuota = _cuota_futbol_goles(total_g, m)
         st.markdown(textwrap.dedent(f"""
         <div class="sl-exp-card">
           <div class="sl-exp-rank">{idx}</div>
@@ -347,7 +363,7 @@ def _render_aciertos_futbol():
                 <div class="sl-exp-bar"><span style="width:{prob}%;"></span></div>
                 <span>{prob}%</span>
               </div>
-              <div class="sl-exp-odds">{cuota:.2f}</div>
+              <div class="sl-exp-odds">Cuota {cuota:.2f}</div>
             </div>
           </div>
         </div>
@@ -419,8 +435,19 @@ def _render_proximos_pro_nba(partidos_pre):
 
 
 def _render_rachas(deporte):
-    """Muestra rachas reales de equipos y jugadores destacados."""
-    st.markdown("### 🔥 Rachas activas detectadas")
+    """Muestra rachas reales de equipos y jugadores destacados con explicación clara."""
+    st.markdown(
+        '<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #F59E0B;border-radius:14px;'
+        'padding:13px 16px;margin:4px 0 14px;box-shadow:0 3px 12px -6px rgba(15,23,42,.06);">'
+        '<div style="font-weight:800;font-size:.95rem;color:#0F172A;margin-bottom:4px;">🔥 ¿Qué es el menú de Rachas?</div>'
+        '<div style="font-size:.82rem;color:#475569;line-height:1.45;">'
+        'Detecta automáticamente <b>equipos y jugadores con tendencia activa</b> en sus últimos partidos: '
+        'victorias consecutivas (<b>G</b>/<b>P</b>), jugadores que superan su línea de puntos con regularidad '
+        'y encuentros con alta frecuencia de goles (<b>+1,5 / +2,5</b>) o valla invicta. '
+        'Úsalo para detectar momento de forma antes de elegir una línea.'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
     if deporte == NBA:
         partidos = _cargar_nba_reciente_y_hoy()
         equipos_vistos = {}
@@ -432,6 +459,7 @@ def _render_rachas(deporte):
         if not lista_eq:
             st.info("No hay equipos disponibles en agenda para calcular rachas.")
             return
+        st.markdown("**🛡️ Rachas recientes de equipos (últimos 5 partidos)**")
         cals = fd._paralelo([lambda e=e: fd.calendario_seguro(e["id"]) for e in lista_eq])
         hay = False
         cols = st.columns(2, gap="small")
@@ -447,9 +475,14 @@ def _render_rachas(deporte):
                     racha_g += 1
                 else:
                     break
-            etq = f"{racha_g} victorias seguidas" if racha_g >= 2 else f"{ganados} de últimos {len(forma)} ganados"
+            if racha_g >= 2:
+                etq = f"🔥 {racha_g} victorias seguidas"
+            elif ganados >= 4:
+                etq = f"En alza · {ganados} de {len(forma)} ganados"
+            else:
+                etq = f"{ganados} de últimos {len(forma)} ganados"
             chips = "".join(
-                f'<span class="sl-gp {"g" if g["res"] == "G" else "p"}">{g["res"]}</span>'
+                f'<span class="sl-gp {"g" if g["res"] == "G" else "p"}" title="{_esc(g.get("rival", ""))}">{g["res"]}</span>'
                 for g in forma
             )
             with cols[idx_col % 2]:
@@ -466,6 +499,40 @@ def _render_rachas(deporte):
             hay = True
         if not hay:
             st.info("No hay suficientes partidos recientes para calcular rachas NBA.")
+
+        # Jugadores en racha anotadora con foto real
+        try:
+            jugs = inicio._jugadores_destacados_lista()
+        except Exception:  # noqa: BLE001
+            jugs = []
+        if jugs:
+            st.markdown("**🏀 Jugadores en racha anotadora (últimos 5 PJ)**")
+            cols_j = st.columns(2, gap="small")
+            for idx_j, (pid, nom_j, eq_j, _, forma_j) in enumerate(jugs[:4]):
+                prom_j = (forma_j or {}).get("pts")
+                serie_j = (forma_j or {}).get("serie") or []
+                if prom_j is None or not serie_j:
+                    continue
+                linea_j = max(0.5, int(prom_j) - 0.5)
+                hits_j = sum(1 for x in serie_j[-5:] if x > linea_j)
+                foto_j = fd.foto(pid)
+                esc_j = fd.escudo(eq_j)
+                with cols_j[idx_j % 2]:
+                    st.markdown(
+                        f'<div class="sl-racha-card">'
+                        f'<div class="sl-racha-top">'
+                        f'<div class="sl-mteam">'
+                        f'<img class="sl-exp-av" src="{_esc(foto_j)}" alt="{_esc(nom_j)}" style="width:36px;height:36px;">'
+                        f'<div><div style="font-weight:800;font-size:.9rem;color:#0F172A;">{_esc(nom_j)}</div>'
+                        f'<div style="font-size:.73rem;color:#64748B;display:flex;align-items:center;gap:4px;">'
+                        f'<img src="{_esc(esc_j)}" style="width:14px;height:14px;object-fit:contain;">{_esc(eq_j)} · Prom. {prom_j:g} pts</div></div>'
+                        f'</div>'
+                        f'<span class="sl-racha-pill">+{linea_j:g} pts · {hits_j}/{len(serie_j[-5:])} PJ</span>'
+                        f'</div>'
+                        f'<div style="font-size:.76rem;color:#475569;">Últimos 5 partidos: <b>{" · ".join(f"{x:g}" for x in serie_j[-5:])}</b> pts</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
     else:
         try:
             _, partidos = inicio._resumen_dia()
@@ -475,14 +542,46 @@ def _render_rachas(deporte):
         if not fut:
             st.info("Sin partidos finalizados de fútbol hoy para resumir rachas.")
             return
+        st.markdown("**⚽ Tendencias y rachas destacadas de hoy**")
         for m in fut:
             h, a = m["home"], m["away"]
+            try:
+                gh, ga = int(h["score"]), int(a["score"])
+            except ValueError:
+                gh, ga = 0, 0
+            tot = gh + ga
+            dif = abs(gh - ga)
+            if tot >= 3:
+                etq_r = f"🔥 +2,5 goles ({tot} tantos)"
+                desc_r = "Partido de alta anotación; supera la línea estándar de 2,5 goles."
+            elif gh > 0 and ga > 0:
+                etq_r = "🔥 Ambos anotan (BTTS)"
+                desc_r = "Ambos clubes marcaron al menos un gol en el encuentro."
+            elif dif >= 2:
+                gan = h["nombre"] if gh > ga else a["nombre"]
+                etq_r = f"🛡️ Victoria sólida · {gan}"
+                desc_r = f"Triunfo con diferencia de {dif} goles y arco en cero." if min(gh, ga) == 0 else f"Triunfo por {dif} goles de diferencia."
+            elif tot >= 2:
+                etq_r = f"✓ +1,5 goles ({tot} tantos)"
+                desc_r = "Cumple tendencia básica de al menos 2 goles totales."
+            else:
+                etq_r = "🔒 Partido cerrado (-2,5 goles)"
+                desc_r = "Marcador ajustado con dominio defensivo."
             st.markdown(
                 f'<div class="sl-racha-card">'
                 f'<div class="sl-racha-top">'
-                f'<div class="sl-mteam"><img class="sl-mlogo" src="{_esc(h["logo"])}" alt=""><b>{_esc(h["nombre"])} {h["score"]} - {a["score"]} {_esc(a["nombre"])}</b></div>'
-                f'<span class="sl-racha-pill">{_esc(m["liga"])}</span>'
-                f'</div></div>',
+                f'<div class="sl-mteam">'
+                f'<img class="sl-mlogo" src="{_esc(h["logo"])}" alt=""><b>{_esc(h["nombre"])}</b>'
+                f'<span style="font-family:var(--pl-font-mono);font-weight:800;color:#4F46E5;padding:0 4px;">{gh} - {ga}</span>'
+                f'<img class="sl-mlogo" src="{_esc(a["logo"])}" alt=""><b>{_esc(a["nombre"])}</b>'
+                f'</div>'
+                f'<span class="sl-racha-pill">{_esc(etq_r)}</span>'
+                f'</div>'
+                f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.77rem;color:#64748B;">'
+                f'<span>{_esc(desc_r)}</span>'
+                f'<span style="font-weight:700;color:#4338CA;white-space:nowrap;">{_esc(m["liga"])}</span>'
+                f'</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
