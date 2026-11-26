@@ -196,7 +196,7 @@ def _cuerpo(fecha, rat, puesto, lesiones, nombres, vigilando):
     st.caption(f"{len(juegos)} partidos" + (f" · {vivos} en vivo" if vivos else "")
                + f" · actualizado {ahora}"
                + (f" · se refresca solo cada {INTERVALO_S} s" if vigilando else "")
-               + " · lesiones y líneas según ESPN, ordenadas por gravedad")
+               + " · líneas y lesiones ordenadas por gravedad")
     orden = {"in": 0, "pre": 1, "post": 2}  # en vivo primero, luego por jugar, luego terminados
     vistos = st.session_state.setdefault("nba_hoy_vistos", set())  # la animación de entrada se ve una sola vez
     for idx, j in enumerate(sorted(juegos, key=lambda x: (orden.get(x["estado"], 3), x["fecha"] or ""))):
