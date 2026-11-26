@@ -380,11 +380,10 @@ html, body {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  filter: drop-shadow(0 2px 12px rgba(167,139,250,.5));
-  transition: filter .35s ease, transform .35s ease;
+  filter: none;
+  transition: transform .35s ease;
 }
 .sl-brand-img:hover {
-  filter: drop-shadow(0 4px 20px rgba(167,139,250,.85));
   transform: scale(1.04);
 }
 .sl-brand-fallback {
