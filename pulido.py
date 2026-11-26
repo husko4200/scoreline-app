@@ -2549,34 +2549,36 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
 
 /* ───────── Top Expected & Rachas (inspirado en PowerStats) ───────── */
 .sl-exp-hero {
-  background: linear-gradient(135deg, #4338CA 0%, #6D28D9 60%, #7C3AED 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 60%, #EDE9FE 100%);
+  color: #1E1B4B;
+  border: 1px solid #C7D2FE;
   border-radius: 16px;
   padding: 18px 22px;
   margin-bottom: 14px;
-  box-shadow: 0 10px 28px -12px rgba(79,70,229,.55);
+  box-shadow: 0 4px 18px -6px rgba(79,70,229,.15), 0 1px 3px rgba(79,70,229,.06);
 }
 .sl-exp-hero-badge {
   display: inline-block;
   font-size: .72rem;
   font-weight: 700;
   letter-spacing: .08em;
-  color: #FDE68A;
-  background: rgba(255,255,255,.12);
+  color: #4338CA;
+  background: rgba(79,70,229,.10);
+  border: 1px solid #C7D2FE;
   padding: 3px 10px;
   border-radius: 999px;
   margin-bottom: 6px;
 }
 .sl-exp-hero-title {
   margin: 0 0 4px 0 !important;
-  color: #FFFFFF !important;
-  -webkit-text-fill-color: #FFFFFF !important;
+  color: #1E1B4B !important;
+  -webkit-text-fill-color: #1E1B4B !important;
   font-size: 1.45rem !important;
   font-weight: 800 !important;
 }
 .sl-exp-hero-sub {
   margin: 0;
-  color: rgba(255,255,255,.88);
+  color: #4338CA;
   font-size: .9rem;
 }
 .sl-exp-card {
@@ -2698,11 +2700,12 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   color: #047857;
   border: 1px solid #A7F3D0;
   font-weight: 800;
-  font-size: .82rem;
-  padding: 4px 11px;
-  border-radius: 9px;
+  font-size: .88rem;
+  padding: 5px 13px;
+  border-radius: 10px;
   font-family: var(--pl-font-mono);
   white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, .10);
 }
 .sl-exp-lockbox {
   background: #FFFFFF;

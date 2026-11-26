@@ -195,8 +195,7 @@ def _cuerpo(fecha, rat, puesto, lesiones, nombres, vigilando):
     ahora = pd.Timestamp.now(tz=ZONA).strftime("%H:%M:%S")
     st.caption(f"{len(juegos)} partidos" + (f" · {vivos} en vivo" if vivos else "")
                + f" · actualizado {ahora}"
-               + (f" · se refresca solo cada {INTERVALO_S} s" if vigilando else "")
-               + " · líneas y lesiones ordenadas por gravedad")
+               + (f" · actualización automática cada {INTERVALO_S} s" if vigilando else ""))
     orden = {"in": 0, "pre": 1, "post": 2}  # en vivo primero, luego por jugar, luego terminados
     vistos = st.session_state.setdefault("nba_hoy_vistos", set())  # la animación de entrada se ve una sola vez
     for idx, j in enumerate(sorted(juegos, key=lambda x: (orden.get(x["estado"], 3), x["fecha"] or ""))):
@@ -211,10 +210,9 @@ def _cuerpo(fecha, rat, puesto, lesiones, nombres, vigilando):
 def render(liga=None):
     estilos.cargar("hoy")
     st.session_state["nba_hoy_vistos"] = set()  # ejecución completa: las tarjetas vuelven a entrar animadas
-    c1, c2 = st.columns([2, 5], vertical_alignment="bottom")
-    dia = c1.date_input("Día", value=_hoy_et(), key="nba_hoy_dia", format="DD/MM/YYYY")
-    auto = c2.toggle(f"Actualizar solo (cada {INTERVALO_S} s) cuando haya partidos en vivo", value=True,
-                     key="nba_hoy_auto")
+    dia = _hoy_et()
+    auto = st.toggle(f"Actualizar automáticamente (cada {INTERVALO_S} s)", value=True,
+                     key="nba_hoy_auto", help="Se activa solo cuando hay partidos en juego")
     fecha = f"{dia:%Y%m%d}"
     if liga is None:
         st.warning("Sin datos de la liga: se muestran los partidos sin Elo.")
