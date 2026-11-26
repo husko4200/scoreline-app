@@ -1469,12 +1469,12 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   height: 100%;
 }
 .dash-panel-box {
-  background: linear-gradient(160deg, #131836 0%, #0B0F20 100%);
-  border: 1px solid rgba(139, 92, 246, .38);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 16px;
-  padding: 15px 16px;
-  box-shadow: 0 12px 28px rgba(11, 15, 32, .22);
-  color: #F8FAFC;
+  padding: 16px 18px;
+  box-shadow: 0 4px 18px -4px rgba(15, 23, 42, .07), 0 1px 3px rgba(15, 23, 42, .04);
+  color: #0F172A;
   min-height: 244px;
   display: flex;
   flex-direction: column;
@@ -1493,20 +1493,20 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   font-family: 'Roboto Condensed', sans-serif;
   font-size: .74rem;
   font-weight: 700;
-  color: #C4B5FD;
+  color: #4F46E5;
   letter-spacing: .06em;
   text-transform: uppercase;
 }
 .dp-link, .dp-time-tag, .dp-dots {
   font-size: .76rem;
-  color: #94A3B8;
+  color: #64748B;
   font-weight: 600;
 }
 .dp-title {
   font-family: 'Roboto Condensed', 'Roboto', sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #0F172A;
   margin-bottom: 12px;
 }
 
@@ -1522,15 +1522,15 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   gap: 12px;
   padding: 9px 11px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, .045);
-  border: 1px solid rgba(255, 255, 255, .08);
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
 }
 .dp-tag-live {
   font-family: 'Roboto Mono', monospace;
   font-variant-numeric: tabular-nums;
   font-size: .74rem;
   font-weight: 700;
-  color: #FB7185;
+  color: #E11D48;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -1541,7 +1541,7 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #FB7185;
+  background: #E11D48;
   animation: livePulse 1.4s infinite;
 }
 .dp-time {
@@ -1549,7 +1549,7 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   font-variant-numeric: tabular-nums;
   font-size: .74rem;
   font-weight: 700;
-  color: #94A3B8;
+  color: #64748B;
   min-width: 46px;
 }
 .dp-teams {
@@ -1560,11 +1560,11 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   font-family: 'Roboto', sans-serif;
   font-size: .85rem;
   font-weight: 600;
-  color: #F8FAFC;
+  color: #0F172A;
   line-height: 1.3;
 }
 .dp-team-line.muted {
-  color: #94A3B8;
+  color: #64748B;
   font-weight: 400;
   font-size: .8rem;
 }
@@ -1573,10 +1573,10 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   font-variant-numeric: tabular-nums;
   font-size: 1.02rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #0F172A;
 }
 .dp-score.muted {
-  color: #64748B;
+  color: #94A3B8;
 }
 
 /* Panel 2: Partido del día */
@@ -1586,8 +1586,8 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   justify-content: center;
   gap: 24px;
   padding: 16px 10px;
-  background: rgba(255, 255, 255, .045);
-  border: 1px solid rgba(255, 255, 255, .08);
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 12px;
   margin-bottom: 12px;
 }
@@ -1608,31 +1608,31 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   font-weight: 700;
   font-size: .86rem;
   color: #fff;
-  box-shadow: 0 3px 10px -2px rgba(19,10,63,.32);
+  box-shadow: 0 3px 10px -2px rgba(19,10,63,.22);
 }
 .potd-badge--mc  { background: #4F46E5; }
 .potd-badge--nap { background: #0284C7; }
 .potd-vs {
   font-size: .75rem;
   font-weight: 700;
-  color: #94A3B8;
+  color: #64748B;
   text-transform: uppercase;
 }
 .potd-name {
   font-family: 'Roboto Condensed', sans-serif;
   font-size: .92rem;
   font-weight: 700;
-  color: #F8FAFC;
+  color: #0F172A;
 }
 .potd-sub-prompt {
   font-size: .78rem;
-  color: #94A3B8;
+  color: #64748B;
   margin-bottom: 8px;
   text-align: center;
 }
 .potd-pick-msg {
   font-size: .74rem;
-  color: #C4B5FD;
+  color: #4F46E5;
   font-weight: 600;
   text-align: center;
   margin-top: 6px;
@@ -1657,26 +1657,26 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   font-size: .84rem;
 }
 .pulse-name {
-  color: #CBD5E1;
+  color: #475569;
   font-weight: 500;
 }
 .pulse-val {
   font-family: 'Roboto Mono', monospace;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #0F172A;
 }
 .pulse-bar-track {
   width: 100%;
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .10);
+  background: #EEF2FF;
   overflow: hidden;
 }
 .pulse-bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #7C3AED 0%, #A855F7 100%);
+  background: linear-gradient(90deg, #4F46E5 0%, #7C3AED 100%);
 }
 
 /* ───────── Live badge / pulse ───────── */
@@ -2043,18 +2043,18 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   border-color: #94A3B8;
 }
 .sl-mcard.is-in {
-  background: linear-gradient(160deg, #131836 0%, #0B0F20 100%);
-  border: 1px solid rgba(244, 63, 94, .45);
-  border-left: 3px solid #FB7185;
-  box-shadow: 0 10px 24px rgba(11, 15, 32, .22);
+  background: linear-gradient(180deg, #FFF5F7 0%, #FFFFFF 48%);
+  border: 1px solid #FECDD3;
+  border-left: 3px solid #E11D48;
+  box-shadow: 0 4px 16px -4px rgba(225, 29, 72, .10), 0 1px 3px rgba(15, 23, 42, .04);
 }
-.sl-mcard.is-in .sl-mtop { color: #94A3B8; }
-.sl-mcard.is-in .sl-mname { color: #F8FAFC; }
-.sl-mcard.is-in .sl-mscore-big { color: #FFFFFF; }
-.sl-mcard.is-in .sl-prob-wrap { border-top-color: rgba(255, 255, 255, .12); }
-.sl-mcard.is-in .sl-prob-labels { color: #E2E8F0; }
-.sl-mcard.is-in .sl-prob-bar { background: rgba(255, 255, 255, .14); }
-.sl-mcard.is-in .sl-prob-home { background: #8B5CF6; }
+.sl-mcard.is-in .sl-mtop { color: #64748B; }
+.sl-mcard.is-in .sl-mname { color: #0F172A; }
+.sl-mcard.is-in .sl-mscore-big { color: #0F172A; }
+.sl-mcard.is-in .sl-prob-wrap { border-top-color: #E2E8F0; }
+.sl-mcard.is-in .sl-prob-labels { color: #334155; }
+.sl-mcard.is-in .sl-prob-bar { background: #E2E8F0; }
+.sl-mcard.is-in .sl-prob-home { background: #4F46E5; }
 .sl-mcard.is-live {
   border-color: #FDA4AF;
   border-left: 3px solid #E11D48;
