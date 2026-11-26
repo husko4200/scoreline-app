@@ -1936,18 +1936,30 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
 }
 .sl-pav-wrap {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   flex-shrink: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 20%, #F8FAFC 0%, #E0E7FF 55%, #A5B4FC 100%);
+  box-shadow: 0 3px 10px -2px rgba(79, 70, 229, .22);
+}
+.sl-pav-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 55%, rgba(79,70,229,.16) 100%);
+  pointer-events: none;
+  z-index: 1;
 }
 .sl-pav {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   object-fit: cover;
-  object-position: 50% 10%;
-  background: radial-gradient(circle at 50% 25%, #EEF2FF, #C7D2FE);
-  border: 2px solid #E0E7FF;
+  object-position: 50% 8%;
+  border: 2px solid #FFFFFF;
+  outline: 1.5px solid #C7D2FE;
   display: block;
 }
 .sl-pcrest {
@@ -1962,6 +1974,7 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   padding: 2px;
   object-fit: contain;
   box-shadow: 0 1px 4px rgba(19,10,63,.15);
+  z-index: 2;
 }
 .sl-pinfo {
   flex: 1;
