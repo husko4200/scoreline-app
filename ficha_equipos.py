@@ -1801,25 +1801,31 @@ def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
     var P = window.parent;
     if (!P || !P.document) return;
     P.__slLogos = Object.assign(P.__slLogos || {{}}, {_json.dumps(logos_map)});
+
+    /* ---- resaltar opción activa con teclado ---- */
     function syncActive() {{
       var list = P.document.querySelector('div[data-baseweb="popover"] ul[role="listbox"]');
       if (!list) return;
+      /* Intentar con aria-activedescendant */
       var activeId = '';
-      var inputs = P.document.querySelectorAll('[data-baseweb="select"] input[aria-activedescendant]');
-      inputs.forEach(function(inp) {{
+      P.document.querySelectorAll('[data-baseweb="select"] input').forEach(function(inp) {{
         var v = inp.getAttribute('aria-activedescendant');
         if (v) activeId = v;
       }});
       var opts = list.querySelectorAll('li[role="option"]');
       opts.forEach(function(li) {{
-        var isAct = activeId && li.id === activeId;
-        li.classList.toggle('sl-kb-active', !!isAct);
+        /* Comparar por id O por aria-selected si no hay activeId */
+        var byId  = activeId && li.id === activeId;
+        var bySel = !activeId && li.getAttribute('aria-selected') === 'true';
+        li.classList.toggle('sl-kb-active', !!(byId || bySel));
       }});
     }}
+
+    /* ---- inyectar logos en el desplegable ---- */
     function paint() {{
       var opts = P.document.querySelectorAll('div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]');
       opts.forEach(function(li) {{
-        var txt = (li.textContent || '').replace('↵', '').trim();
+        var txt = (li.textContent || '').replace('↵','').trim();
         var url = P.__slLogos[txt];
         if (!url) return;
         var cur = li.querySelector('img.sl-opt-logo');
@@ -1833,13 +1839,24 @@ def selector_equipos(equipos, por_id, key_pref="fe", con_abbr=True):
       }});
       syncActive();
     }}
-    if (!P.__slLogoObs) {{
-      P.__slLogoObs = new MutationObserver(paint);
-      P.__slLogoObs.observe(P.document.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-activedescendant', 'aria-selected'] }});
+
+    /* ---- registrar observer y keydown (siempre actualizar la referencia) ---- */
+    if (P.__slLogoObs) {{ P.__slLogoObs.disconnect(); }}
+    P.__slLogoObs = new MutationObserver(paint);
+    P.__slLogoObs.observe(P.document.body, {{
+      childList: true, subtree: true,
+      attributes: true,
+      attributeFilter: ['aria-activedescendant', 'aria-selected']
+    }});
+
+    /* registrar keydown solo una vez por sesión de parent */
+    if (!P.__slKbBound) {{
+      P.__slKbBound = true;
       P.document.addEventListener('keydown', function(ev) {{
         if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {{
-          setTimeout(syncActive, 10);
-          setTimeout(syncActive, 40);
+          setTimeout(syncActive, 15);
+          setTimeout(syncActive, 60);
+          setTimeout(syncActive, 150);
         }}
       }}, true);
     }}
