@@ -401,47 +401,206 @@ def _racha_anotacion(plays: list, nombre_por_id: dict):
     return nombre_por_id.get(equipo, equipo), corrida
 
 
+def _box_rico(s: dict) -> list[dict]:
+    """Extrae box score por equipo con id, foto, posición, titularidad y stats."""
+    import favoritos_datos as _fd
+    equipos = []
+    for blk in (s.get("boxscore") or {}).get("players", []):
+        tm = blk.get("team") or {}
+        nombre = tm.get("displayName", "Equipo")
+        abrev = (tm.get("abbreviation") or "").upper()
+        stats_blk = (blk.get("statistics") or [{}])[0]
+        etiquetas = stats_blk.get("labels") or stats_blk.get("names") or []
+        jugadores = []
+        for a in stats_blk.get("athletes", []):
+            if a.get("didNotPlay"):
+                continue
+            ath = a.get("athlete") or {}
+            pid = str(ath.get("id") or "")
+            nom = ath.get("shortName") or ath.get("displayName") or "?"
+            pos = (ath.get("position") or {}).get("abbreviation") or ""
+            dorsal = str(ath.get("jersey") or "")
+            st_map = dict(zip(etiquetas, a.get("stats", [])))
+            jugadores.append({
+                "id": pid,
+                "nom": nom,
+                "pos": pos,
+                "dorsal": dorsal,
+                "starter": bool(a.get("starter")),
+                "foto": _fd.foto(pid),
+                "stats": st_map,
+            })
+        equipos.append({
+            "id": str(tm.get("id") or ""),
+            "nombre": nombre,
+            "abrev": abrev,
+            "logo": _fd.escudo(abrev),
+            "etiquetas": etiquetas,
+            "jugadores": jugadores,
+        })
+    return equipos
+
+
+_ES_STATS_NBA = {
+    "FG": "Tiros de campo", "Field Goals Made-Attempted": "Tiros de campo",
+    "Field Goal %": "% Tiros de campo", "FG%": "% Tiros de campo",
+    "3PT": "Triples", "Three Point %": "% Triples", "3P%": "% Triples",
+    "FT": "Tiros libres", "Free Throw %": "% Tiros libres", "FT%": "% Tiros libres",
+    "Rebounds": "Rebotes totales", "Offensive Rebounds": "Rebotes ofensivos",
+    "Defensive Rebounds": "Rebotes defensivos", "Assists": "Asistencias",
+    "Steals": "Robos", "Blocks": "Tapones", "Turnovers": "Pérdidas",
+    "Total Turnovers": "Pérdidas", "Points in Paint": "Puntos en pintura",
+    "Fast Break Points": "Contraataque", "Team Turnovers": "Pérdidas de equipo",
+    "Technical Fouls": "Faltas técnicas", "Flagrant Fouls": "Faltas flagrantes",
+}
+
+
+def _num_stat(val):
+    try:
+        return float(str(val).replace("%", "").strip())
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _detalle(j: dict):
+    from html import escape as _e
+    import favoritos_datos as _fd
+
     L, V = j["local"], j["visita"]
     a = analisis_vivo(j)
-    st.subheader(f"{V['nombre']} @ {L['nombre']}")
+    v_ab = (V.get("abrev") or V["nombre"][:3]).upper()
+    l_ab = (L.get("abrev") or L["nombre"][:3]).upper()
+    v_logo = _fd.escudo(v_ab)
+    l_logo = _fd.escudo(l_ab)
+
     if j["estado"] == "pre":
-        hora = pd.to_datetime(j["fecha"], utc=True).tz_convert(ZONA).strftime("%d/%m %H:%M")
-        c = st.columns(4)
-        c[0].metric("Inicio (hora local)", hora)
-        c[1].metric("Récord visita", V["record"] or "-")
-        c[2].metric("Récord local", L["record"] or "-")
-        c[3].metric("Línea / total", f"{j['linea_txt'] or '-'} · {j['linea_total'] or '-'}")
-        st.caption("El análisis en vivo se activa cuando comienza el partido.")
+        hora, _ = _fd.cuando(j["fecha"])
+        hora_lbl = hora.capitalize() if hora else pd.to_datetime(j["fecha"], utc=True).tz_convert(ZONA).strftime("%d/%m %H:%M")
+        linea_txt = f"{j['linea_txt'] or 'Sin línea'}" + (f" · Total {j['linea_total']}" if j.get("linea_total") else "")
+        st.markdown(
+            f'<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;padding:18px 20px;margin:6px 0 12px;'
+            f'box-shadow:0 4px 18px -6px rgba(15,23,42,.07);">'
+            f'<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;">'
+            f'<div style="display:flex;align-items:center;gap:12px;">'
+            f'<img src="{_e(v_logo)}" style="width:48px;height:48px;object-fit:contain;">'
+            f'<div><div style="font-weight:800;font-size:1.08rem;color:#0F172A;">{_e(V["nombre"])}</div>'
+            f'<div style="font-size:.78rem;color:#64748B;">Récord {_e(V["record"] or "-")}</div></div></div>'
+            f'<div style="text-align:center;">'
+            f'<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;font-size:.72rem;font-weight:700;">{_e(hora_lbl)}</span>'
+            f'<div style="font-size:.75rem;color:#64748B;margin-top:5px;">{_e(linea_txt)}</div></div>'
+            f'<div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;text-align:right;">'
+            f'<div><div style="font-weight:800;font-size:1.08rem;color:#0F172A;">{_e(L["nombre"])}</div>'
+            f'<div style="font-size:.78rem;color:#64748B;">Récord {_e(L["record"] or "-")}</div></div>'
+            f'<img src="{_e(l_logo)}" style="width:48px;height:48px;object-fit:contain;"></div>'
+            f'</div></div>',
+            unsafe_allow_html=True,
+        )
+        st.caption("El panel en vivo, box score y gráfico de probabilidad se activan al iniciar el partido.")
         try:
             import nba_extra
 
             nba_extra.mostrar_lesiones_partido(L["nombre"], V["nombre"])
         except Exception:  # noqa: BLE001
-            pass  # las lesiones son un extra: si ESPN falla, el resto del detalle sigue igual
+            pass
         return
 
-    c = st.columns(5)
-    c[0].metric("Marcador", f"{V['abrev']} {V['puntos']:.0f} – {L['puntos']:.0f} {L['abrev']}")
-    c[1].metric("Estado", j["detalle"])
-    if j["estado"] == "in":
-        c[2].metric("Proyección total", f"{a.get('proy_total', 0):.0f}",
-                    delta=(f"{a['proy_total'] - j['linea_total']:+.1f} vs línea" if j["linea_total"] else None))
-        c[3].metric("Ritmo (pts/48')", f"{a.get('ritmo48', 0):.0f}")
-        c[4].metric(f"Gana {L['abrev']} (modelo)", f"{a['prob_local']:.0%}")
-        st.caption("Modelo propio: normal con σ≈12 pts; usa la línea de ESPN si existe, "
-                   "si no, +2.5 de ventaja local. Es una estimación, no una certeza.")
-    else:
-        c[2].metric("Total", f"{a['total']:.0f}")
-        c[3].metric("Margen local", f"{a['dif']:+.0f}")
+    # ── Tarjeta Hero del partido en vivo / finalizado ────────────────────────
+    es_vivo = j["estado"] == "in"
+    v_pts = f"{V['puntos']:.0f}"
+    l_pts = f"{L['puntos']:.0f}"
+    p_loc = round((a.get("prob_local") or 0.5) * 100)
+    p_vis = 100 - p_loc
 
+    badge_html = (
+        f'<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;'
+        f'background:#FFF1F2;color:#E11D48;border:1px solid #FECDD3;font-size:.72rem;font-weight:800;">'
+        f'<span style="width:6px;height:6px;border-radius:50%;background:#E11D48;"></span>EN VIVO · {_e(j["detalle"])}</span>'
+        if es_vivo else
+        f'<span style="display:inline-block;padding:3px 10px;border-radius:999px;'
+        f'background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;font-size:.72rem;font-weight:700;">FINAL</span>'
+    )
+
+    extra_kpis = ""
+    if es_vivo:
+        proy = f"{a.get('proy_total', 0):.0f}"
+        ritmo = f"{a.get('ritmo48', 0):.0f}"
+        dif_l = (f" ({a['proy_total'] - j['linea_total']:+.1f} vs línea)" if j.get("linea_total") else "")
+        extra_kpis = (
+            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid #F1F5F9;">'
+            f'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:8px 12px;">'
+            f'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748B;">Proyección total</div>'
+            f'<div style="font-family:var(--pl-font-mono);font-size:1.15rem;font-weight:800;color:#0F172A;">{proy}<span style="font-size:.74rem;font-weight:600;color:#4F46E5;">{_e(dif_l)}</span></div></div>'
+            f'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:8px 12px;">'
+            f'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748B;">Ritmo (pts/48\')</div>'
+            f'<div style="font-family:var(--pl-font-mono);font-size:1.15rem;font-weight:800;color:#0F172A;">{ritmo}</div></div>'
+            f'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:8px 12px;">'
+            f'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748B;">Prob. modelo</div>'
+            f'<div style="font-size:.86rem;font-weight:800;color:#0F172A;margin:2px 0 4px;">{_e(v_ab)} {p_vis}% · {p_loc}% {_e(l_ab)}</div>'
+            f'<div style="display:flex;height:5px;border-radius:999px;overflow:hidden;background:#E2E8F0;">'
+            f'<div style="width:{p_vis}%;background:#94A3B8;"></div><div style="flex:1;background:#4F46E5;"></div></div></div>'
+            f'</div>'
+        )
+    else:
+        extra_kpis = (
+            f'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid #F1F5F9;">'
+            f'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:8px 12px;">'
+            f'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:#64748B;">Total del partido</div>'
+            f'<div style="font-family:var(--pl-font-mono);font-size:1.15rem;font-weight:800;color:#0F172A;">{a["total"]:.0f} pts</div></div>'
+            f'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:8px 12px;">'
+            f'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:#64748B;">Diferencia local</div>'
+            f'<div style="font-family:var(--pl-font-mono);font-size:1.15rem;font-weight:800;color:#0F172A;">{a["dif"]:+.0f}</div></div>'
+            f'</div>'
+        )
+
+    st.markdown(
+        f'<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;padding:18px 22px;margin:4px 0 12px;'
+        f'box-shadow:0 6px 22px -8px rgba(15,23,42,.08);">'
+        f'<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;">'
+        f'<div style="display:flex;align-items:center;gap:12px;min-width:0;">'
+        f'<img src="{_e(v_logo)}" style="width:52px;height:52px;object-fit:contain;flex-shrink:0;">'
+        f'<div style="min-width:0;"><div style="font-weight:800;font-size:1.1rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_e(V["nombre"])}</div>'
+        f'<div style="font-size:.76rem;color:#64748B;">Visita · {_e(V["record"] or "-")}</div></div>'
+        f'<div style="margin-left:auto;font-family:var(--pl-font-mono);font-size:2rem;font-weight:800;color:#0F172A;">{v_pts}</div>'
+        f'</div>'
+        f'<div style="text-align:center;">{badge_html}</div>'
+        f'<div style="display:flex;align-items:center;gap:12px;min-width:0;">'
+        f'<div style="margin-right:auto;font-family:var(--pl-font-mono);font-size:2rem;font-weight:800;color:#4F46E5;">{l_pts}</div>'
+        f'<div style="min-width:0;text-align:right;"><div style="font-weight:800;font-size:1.1rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_e(L["nombre"])}</div>'
+        f'<div style="font-size:.76rem;color:#64748B;">Local · {_e(L["record"] or "-")}</div></div>'
+        f'<img src="{_e(l_logo)}" style="width:52px;height:52px;object-fit:contain;flex-shrink:0;">'
+        f'</div>'
+        f'</div>'
+        f'{extra_kpis}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Tabla de cuartos en blanco elegante con escudos ──────────────────────
     n_q = max(len(L["q"]), len(V["q"]))
     if n_q:
-        nom = [f"Q{i + 1}" if i < 4 else f"OT{i - 3}" for i in range(n_q)]
-        q = pd.DataFrame([V["q"] + [0] * (n_q - len(V["q"])), L["q"] + [0] * (n_q - len(L["q"]))],
-                         columns=nom, index=[V["nombre"], L["nombre"]])
-        q["Total"] = [V["puntos"], L["puntos"]]
-        st.dataframe(q.astype(int), use_container_width=True)
+        nom_cols = [f"Q{i + 1}" if i < 4 else f"OT{i - 3}" for i in range(n_q)]
+        vq = [str(int(x)) for x in V["q"]] + ["–"] * (n_q - len(V["q"]))
+        lq = [str(int(x)) for x in L["q"]] + ["–"] * (n_q - len(L["q"]))
+        ths = "".join(f"<th style='padding:8px 12px;font-weight:700;'>{c}</th>" for c in nom_cols)
+        v_tds = "".join(f"<td style='padding:9px 12px;font-family:var(--pl-font-mono);color:#334155;'>{x}</td>" for x in vq)
+        l_tds = "".join(f"<td style='padding:9px 12px;font-family:var(--pl-font-mono);color:#334155;'>{x}</td>" for x in lq)
+        st.markdown(
+            f'<div style="overflow-x:auto;margin-bottom:12px;">'
+            f'<table style="width:100%;border-collapse:collapse;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;font-size:.84rem;text-align:center;box-shadow:0 2px 10px -4px rgba(15,23,42,.05);">'
+            f'<thead><tr style="background:#F8FAFC;color:#64748B;font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #E2E8F0;">'
+            f'<th style="text-align:left;padding:8px 14px;">Parciales por cuarto</th>{ths}<th style="padding:8px 14px;">Total</th></tr></thead>'
+            f'<tbody>'
+            f'<tr style="border-bottom:1px solid #F1F5F9;">'
+            f'<td style="text-align:left;padding:9px 14px;font-weight:700;color:#0F172A;display:flex;align-items:center;gap:8px;">'
+            f'<img src="{_e(v_logo)}" style="width:20px;height:20px;object-fit:contain;">{_e(V["nombre"])}</td>'
+            f'{v_tds}<td style="padding:9px 14px;font-family:var(--pl-font-mono);font-weight:800;color:#0F172A;">{v_pts}</td></tr>'
+            f'<tr>'
+            f'<td style="text-align:left;padding:9px 14px;font-weight:700;color:#0F172A;display:flex;align-items:center;gap:8px;">'
+            f'<img src="{_e(l_logo)}" style="width:20px;height:20px;object-fit:contain;">{_e(L["nombre"])}</td>'
+            f'{l_tds}<td style="padding:9px 14px;font-family:var(--pl-font-mono);font-weight:800;color:#4F46E5;">{l_pts}</td></tr>'
+            f'</tbody></table></div>',
+            unsafe_allow_html=True,
+        )
 
     try:
         s = resumen(j["id"])
@@ -454,35 +613,196 @@ def _detalle(j: dict):
         d = pd.DataFrame({"Jugada": range(len(wp)),
                           "Prob": [num(x.get("homeWinPercentage")) for x in wp]}).dropna()
         d["Prob"] = d["Prob"] * (100 if d["Prob"].max() <= 1 else 1)
-        st.markdown(f"**Probabilidad de victoria de {L['nombre']} (ESPN)**")
-        base = alt.Chart(d).mark_line(color=COLOR_A, strokeWidth=2).encode(
-            x=alt.X("Jugada:Q", title="Jugada"), y=alt.Y("Prob:Q", title="%", scale=alt.Scale(domain=[0, 100])),
-            tooltip=["Jugada", alt.Tooltip("Prob", format=".1f")])
-        mitad = alt.Chart(pd.DataFrame({"y": [50]})).mark_rule(color=COLOR_NEUTRO, strokeDash=[4, 4]).encode(y="y:Q")
-        st.altair_chart(base + mitad, use_container_width=True)
+        st.markdown(f"**📈 Probabilidad de victoria en vivo · {L['nombre']}**")
+        area = alt.Chart(d).mark_area(
+            color="#4F46E5", opacity=0.12, interpolate="monotone"
+        ).encode(x="Jugada:Q", y=alt.Y("Prob:Q", scale=alt.Scale(domain=[0, 100])))
+        linea = alt.Chart(d).mark_line(color="#4F46E5", strokeWidth=2.5, interpolate="monotone").encode(
+            x=alt.X("Jugada:Q", title="Jugada"), y=alt.Y("Prob:Q", title="Probabilidad %", scale=alt.Scale(domain=[0, 100])),
+            tooltip=[alt.Tooltip("Jugada", title="Jugada"), alt.Tooltip("Prob", title="Prob. %", format=".1f")])
+        mitad = alt.Chart(pd.DataFrame({"y": [50]})).mark_rule(color="#94A3B8", strokeDash=[4, 4]).encode(y="y:Q")
+        st.altair_chart((area + linea + mitad).properties(height=210), use_container_width=True)
 
     plays = s.get("plays") or []
     if plays and j["estado"] == "in":
         quien, pts = _racha_anotacion(plays, {L["id"]: L["nombre"], V["id"]: V["nombre"]})
         if quien and pts >= 6:
-            st.info(f"🔥 Parcial en curso: {quien} suma {pts} puntos seguidos.")
+            st.info(f"🔥 Parcial en curso: **{quien}** suma **{pts}** puntos seguidos.")
 
-    t_box, t_eq, t_jug = st.tabs(["Box score", "Equipos", "Últimas jugadas"])
+    t_box, t_eq, t_jug = st.tabs(["📊 Box score y líderes", "⚖️ Comparativa de equipos", "⚡ Últimas jugadas"])
+
     with t_box:
-        for nombre, df in _tabla_box(s).items():
-            st.markdown(f"**{nombre}**")
-            st.dataframe(df, hide_index=True, use_container_width=True)
+        equipos_box = _box_rico(s)
+        if not equipos_box:
+            st.caption("Sin estadísticas de jugadores todavía.")
+        else:
+            # Líderes del partido con foto real
+            todos_j = []
+            for eb in equipos_box:
+                for p in eb["jugadores"]:
+                    todos_j.append((eb["abrev"], p))
+            if todos_j:
+                def _top_stat(claves):
+                    mejor, mv = None, -1.0
+                    for ab, p in todos_j:
+                        for ck in claves:
+                            val = _num_stat(p["stats"].get(ck))
+                            if val is not None and val > mv:
+                                mv = val
+                                mejor = (ab, p, int(val))
+                    return mejor
+
+                top_pts = _top_stat(("PTS", "pts"))
+                top_reb = _top_stat(("REB", "reb"))
+                top_ast = _top_stat(("AST", "ast"))
+                tarjetas_lid = []
+                for titulo_l, item_l, uni in (("Máximo anotador", top_pts, "PTS"), ("Líder en rebotes", top_reb, "REB"), ("Líder en asistencias", top_ast, "AST")):
+                    if not item_l:
+                        continue
+                    ab_l, pl_l, val_l = item_l
+                    ini = "".join(w[0] for w in pl_l["nom"].split()[:2]).upper()
+                    img_h = (
+                        f'<img src="{_e(pl_l["foto"])}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:50% 10%;'
+                        f'background:radial-gradient(circle at 50% 25%,#F8FAFC,#E0E7FF);border:1.5px solid #C7D2FE;" '
+                        f'onerror="this.style.display=\'none\';">'
+                        if pl_l["foto"] else
+                        f'<div style="width:44px;height:44px;border-radius:50%;background:#EEF2FF;color:#4338CA;display:grid;place-items:center;font-weight:800;">{_e(ini)}</div>'
+                    )
+                    tarjetas_lid.append(
+                        f'<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;">'
+                        f'{img_h}'
+                        f'<div style="min-width:0;flex:1;"><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:#64748B;">{titulo_l}</div>'
+                        f'<div style="font-weight:800;font-size:.88rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_e(pl_l["nom"])}</div>'
+                        f'<div style="font-size:.72rem;color:#64748B;">{_e(ab_l)} · {_e(pl_l["pos"])}</div></div>'
+                        f'<div style="text-align:right;"><div style="font-family:var(--pl-font-mono);font-size:1.25rem;font-weight:800;color:#4F46E5;">{val_l}</div>'
+                        f'<div style="font-size:.65rem;font-weight:700;color:#64748B;">{uni}</div></div>'
+                        f'</div>'
+                    )
+                if tarjetas_lid:
+                    st.markdown(
+                        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:14px;">'
+                        f'{"".join(tarjetas_lid)}</div>',
+                        unsafe_allow_html=True,
+                    )
+
+            # Filtro interactivo por equipo
+            nombres_eq = [eb["nombre"] for eb in equipos_box]
+            opciones_f = ["Ambos equipos"] + nombres_eq
+            sel_eq = (
+                st.pills("Equipo box", opciones_f, default="Ambos equipos", key=f"box_flt_{j['id']}", label_visibility="collapsed")
+                if hasattr(st, "pills") else
+                st.radio("Equipo box", opciones_f, horizontal=True, key=f"box_flt_{j['id']}", label_visibility="collapsed")
+            ) or "Ambos equipos"
+
+            cols_mostrar = ["MIN", "PTS", "FG", "3PT", "FT", "REB", "AST", "STL", "BLK", "TO", "+/-"]
+            for eb in equipos_box:
+                if sel_eq != "Ambos equipos" and eb["nombre"] != sel_eq:
+                    continue
+                cols_eq = [c for c in cols_mostrar if c in eb["etiquetas"]]
+                if not cols_eq:
+                    cols_eq = eb["etiquetas"][:10]
+                ths_b = "".join(f"<th style='padding:8px 8px;text-align:center;'>{_e(c)}</th>" for c in cols_eq)
+                filas_html = []
+                for p in eb["jugadores"]:
+                    ini = "".join(w[0] for w in p["nom"].split()[:2]).upper()
+                    av = (
+                        f'<img src="{_e(p["foto"])}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:50% 10%;'
+                        f'background:radial-gradient(circle at 50% 25%,#F8FAFC,#E0E7FF);border:1.5px solid #C7D2FE;flex-shrink:0;" '
+                        f'onerror="this.style.display=\'none\';">'
+                        if p["foto"] else
+                        f'<div style="width:32px;height:32px;border-radius:50%;background:#EEF2FF;color:#4338CA;display:grid;place-items:center;font-size:.7rem;font-weight:800;flex-shrink:0;">{_e(ini)}</div>'
+                    )
+                    tit_badge = (
+                        '<span style="font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:999px;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;margin-left:5px;">Titular</span>'
+                        if p["starter"] else ""
+                    )
+                    celdas = []
+                    for c in cols_eq:
+                        val = str(p["stats"].get(c, "–"))
+                        if c == "PTS":
+                            celdas.append(f"<td style='padding:7px 8px;text-align:center;font-family:var(--pl-font-mono);font-weight:800;color:#4338CA;background:#F5F7FF;'>{_e(val)}</td>")
+                        elif c == "+/-":
+                            clr = "#059669" if val.startswith("+") and val != "+0" else ("#DC2626" if val.startswith("-") else "#475569")
+                            celdas.append(f"<td style='padding:7px 8px;text-align:center;font-family:var(--pl-font-mono);font-weight:700;color:{clr};'>{_e(val)}</td>")
+                        else:
+                            celdas.append(f"<td style='padding:7px 8px;text-align:center;font-family:var(--pl-font-mono);color:#334155;'>{_e(val)}</td>")
+                    filas_html.append(
+                        f"<tr style='border-bottom:1px solid #F1F5F9;'>"
+                        f"<td style='padding:7px 12px;text-align:left;'>"
+                        f"<div style='display:flex;align-items:center;gap:9px;'>{av}"
+                        f"<div><div style='font-weight:700;color:#0F172A;white-space:nowrap;'>{_e(p['nom'])}{tit_badge}</div>"
+                        f"<div style='font-size:.7rem;color:#64748B;'>{_e(p['pos'])}{' · #' + _e(p['dorsal']) if p['dorsal'] else ''}</div></div></div></td>"
+                        f"{''.join(celdas)}</tr>"
+                    )
+                st.markdown(
+                    f'<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 3px 14px -6px rgba(15,23,42,.06);">'
+                    f'<div style="display:flex;align-items:center;gap:9px;padding:10px 14px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;">'
+                    f'<img src="{_e(eb["logo"])}" style="width:24px;height:24px;object-fit:contain;">'
+                    f'<span style="font-weight:800;font-size:.95rem;color:#0F172A;">{_e(eb["nombre"])}</span></div>'
+                    f'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:.8rem;">'
+                    f'<thead><tr style="background:#FFFFFF;color:#64748B;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #E2E8F0;">'
+                    f'<th style="padding:8px 12px;text-align:left;">Jugador</th>{ths_b}</tr></thead>'
+                    f'<tbody>{"".join(filas_html)}</tbody></table></div></div>',
+                    unsafe_allow_html=True,
+                )
+
     with t_eq:
         te = _tabla_equipos(s)
-        if te.empty:
+        if te.empty or len(te.columns) < 2:
             st.caption("Sin estadísticas de equipo todavía.")
         else:
-            st.dataframe(te, use_container_width=True)
+            col_a, col_b = te.columns[0], te.columns[1]
+            ab_a = v_ab if V["nombre"] in col_a else l_ab
+            ab_b = l_ab if ab_a == v_ab else v_ab
+            logo_a, logo_b = _fd.escudo(ab_a), _fd.escudo(ab_b)
+            barras_eq = []
+            for stat_k, row_s in te.iterrows():
+                va, vb = str(row_s[col_a]), str(row_s[col_b])
+                lbl_es = _ES_STATS_NBA.get(str(stat_k), str(stat_k))
+                na, nb = _num_stat(va), _num_stat(vb)
+                if na is not None and nb is not None and (na + nb) > 0:
+                    pa = round(100 * na / (na + nb), 1)
+                else:
+                    pa = 50.0
+                barras_eq.append(
+                    f'<div style="margin-bottom:11px;">'
+                    f'<div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;color:#0F172A;margin-bottom:4px;">'
+                    f'<span>{_e(va)}</span><span style="font-weight:600;color:#64748B;">{_e(lbl_es)}</span><span>{_e(vb)}</span></div>'
+                    f'<div style="display:flex;height:6px;border-radius:999px;overflow:hidden;background:#F1F5F9;">'
+                    f'<div style="width:{pa}%;background:#94A3B8;"></div><div style="flex:1;background:#4F46E5;"></div></div></div>'
+                )
+            st.markdown(
+                f'<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;padding:14px 18px;">'
+                f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #F1F5F9;">'
+                f'<div style="display:flex;align-items:center;gap:8px;font-weight:800;color:#0F172A;"><img src="{_e(logo_a)}" style="width:24px;height:24px;object-fit:contain;">{_e(col_a)}</div>'
+                f'<div style="display:flex;align-items:center;gap:8px;font-weight:800;color:#4F46E5;">{_e(col_b)}<img src="{_e(logo_b)}" style="width:24px;height:24px;object-fit:contain;"></div>'
+                f'</div>{"".join(barras_eq)}</div>',
+                unsafe_allow_html=True,
+            )
+
     with t_jug:
-        for p in plays[-12:][::-1]:
-            per = (p.get("period") or {}).get("displayValue", "")
-            reloj = (p.get("clock") or {}).get("displayValue", "")
-            st.write(f"`{per} {reloj}` {p.get('text', '')}  ({p.get('awayScore', '')}–{p.get('homeScore', '')})")
+        if not plays:
+            st.caption("Sin jugadas registradas todavía.")
+        else:
+            feed = []
+            for p in plays[-12:][::-1]:
+                per = (p.get("period") or {}).get("displayValue", "")
+                reloj = (p.get("clock") or {}).get("displayValue", "")
+                tid_p = str((p.get("team") or {}).get("id") or "")
+                lg_p = v_logo if tid_p == str(V["id"]) else (l_logo if tid_p == str(L["id"]) else "")
+                img_p = f'<img src="{_e(lg_p)}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">' if lg_p else ""
+                feed.append(
+                    f'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #F1F5F9;font-size:.82rem;">'
+                    f'<span style="font-family:var(--pl-font-mono);font-size:.72rem;font-weight:700;color:#4338CA;background:#EEF2FF;padding:2px 7px;border-radius:6px;white-space:nowrap;">{_e(per)} {_e(reloj)}</span>'
+                    f'{img_p}'
+                    f'<span style="flex:1;color:#1E293B;">{_e(p.get("text", ""))}</span>'
+                    f'<span style="font-family:var(--pl-font-mono);font-weight:700;color:#0F172A;white-space:nowrap;">{_e(str(p.get("awayScore", "")))}–{_e(str(p.get("homeScore", "")))}</span>'
+                    f'</div>'
+                )
+            st.markdown(
+                f'<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;">{"".join(feed)}</div>',
+                unsafe_allow_html=True,
+            )
 
 
 def _avisar_marcadores(juegos):
@@ -547,10 +867,16 @@ def live_panel():
             l_ab = (j["local"].get("abrev") or "").upper()
             v_logo = _fd.escudo(v_ab)
             l_logo = _fd.escudo(l_ab)
-            v_sc = str(j["visita"]["puntos"]) if st_cls in ("in", "post") else "-"
-            l_sc = str(j["local"]["puntos"]) if st_cls in ("in", "post") else "-"
+            v_sc = f"{j['visita']['puntos']:.0f}" if st_cls in ("in", "post") else "-"
+            l_sc = f"{j['local']['puntos']:.0f}" if st_cls in ("in", "post") else "-"
             sc_cls = "sl-mscore-big" if st_cls in ("in", "post") else "sl-mscore-big muted"
-            est_lbl = f"EN VIVO · {j['detalle']}" if st_cls == "in" else ("FINALIZADO" if st_cls == "post" else j["detalle"])
+            if st_cls == "in":
+                est_lbl = f"EN VIVO · {j['detalle']}"
+            elif st_cls == "post":
+                est_lbl = "FINALIZADO"
+            else:
+                hora_loc, _ = _fd.cuando(j.get("fecha"))
+                est_lbl = hora_loc.capitalize() if hora_loc else j["detalle"]
             linea_info = j.get("linea_txt") or "Sin línea"
             if j.get("linea_total"):
                 linea_info += f" · Total {j['linea_total']}"
