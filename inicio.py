@@ -1006,7 +1006,3 @@ def pagina_inicio():
 
     # 3. Jugadores destacados con foto real y líneas clave
     _render_jugadores_destacados(busqueda)
-
-    st.caption(
-        "Datos en tiempo real de ESPN y Football-Data · Actualización automática cada 60 s."
-    )
