@@ -500,16 +500,14 @@ def _avisar_marcadores(juegos):
 
 
 def live_panel():
-    c1, c2 = st.columns([1, 3])
     hoy = pd.Timestamp.now(tz="America/New_York").date()
-    fecha = c1.date_input("Fecha (hora de EE.UU.)", value=hoy, key="nba_live_fecha")
     try:
-        juegos = scoreboard(fecha.strftime("%Y%m%d"))
+        juegos = scoreboard(hoy.strftime("%Y%m%d"))
     except Exception as e:  # noqa: BLE001
         st.error(f"No se pudo leer el marcador de ESPN: {e}")
         return
     if not juegos:
-        st.info("No hay partidos de la NBA en esa fecha.")
+        st.info("No hay partidos de la NBA programados para hoy.")
         return
     filas = []
     for j in juegos:
@@ -522,8 +520,20 @@ def live_panel():
                       "Gana local %": round(a["prob_local"] * 100) if j["estado"] == "in" else None})
     vivo = sum(j["estado"] == "in" for j in juegos)
     fin = sum(j["estado"] == "post" for j in juegos)
-    c2.caption(f"{vivo} en vivo · {fin} finalizados · {len(juegos) - vivo - fin} por jugar · "
-               f"actualizado {pd.Timestamp.now(tz=ZONA).strftime('%H:%M:%S')}")
+    por_jugar = len(juegos) - vivo - fin
+    hora_act = pd.Timestamp.now(tz=ZONA).strftime("%H:%M:%S")
+    st.markdown(
+        f'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;'
+        f'background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:8px 14px;margin:4px 0 10px;">'
+        f'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.8rem;font-weight:700;">'
+        f'<span style="background:#FFF1F2;color:#E11D48;border:1px solid #FECDD3;padding:2px 9px;border-radius:999px;">🔴 {vivo} en vivo</span>'
+        f'<span style="background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;padding:2px 9px;border-radius:999px;">⏳ {por_jugar} por jugar</span>'
+        f'<span style="background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;padding:2px 9px;border-radius:999px;">✅ {fin} finalizados</span>'
+        f'</div>'
+        f'<span style="font-size:.76rem;color:#64748B;font-family:var(--pl-font-mono);">Actualizado {hora_act}</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     # Tarjetas visuales con escudos de los equipos (dashboard más atractivo)
     from html import escape as _esc

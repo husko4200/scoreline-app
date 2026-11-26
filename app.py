@@ -142,27 +142,42 @@ def pagina_inicio():
 
 def pagina_vivo():
     """Marcadores en vivo de un deporte, con actualización automática."""
-    st.markdown('<span class="badge-vivo"><span class="punto-vivo"></span>EN VIVO</span>', unsafe_allow_html=True)
-    st.title("Centro en vivo")
-
-    # Controles de actualización en expander compacto arriba (evita recortes/bajo contraste en sidebar).
-    with st.expander("⚙️ Actualización automática", expanded=False):
-        c_tog, c_sld = st.columns([1.2, 2], vertical_alignment="center")
-        auto = c_tog.toggle("Actualizar automáticamente", True,
-                            help="Si lo apagas, los marcadores solo cambian cuando recargas la página.")
-        segundos = c_sld.slider("Cada (segundos)", 10, 120, 30, step=5, disabled=not auto,
-                                help="Cada cuánto tiempo se vuelven a pedir los marcadores.")
+    c_head, c_auto = st.columns([2.4, 1], vertical_alignment="center")
+    c_head.markdown(
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 0;">'
+        '<span class="badge-vivo" style="margin:0;"><span class="punto-vivo"></span>EN VIVO</span>'
+        '<span style="font-family:var(--pl-font-cond);font-size:1.45rem;font-weight:800;color:#0F172A;line-height:1.1;">Centro en vivo</span>'
+        '<span style="font-size:.82rem;color:#64748B;">Marcadores y líneas en tiempo real</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    auto_activo = st.session_state.get("vivo_auto_on", True)
+    seg_actual = st.session_state.get("vivo_auto_seg", 30)
+    lbl_pop = f"🔄 Auto · {seg_actual} s" if auto_activo else "⏸️ Auto apagado"
+    with c_auto:
+        with st.popover(lbl_pop, use_container_width=True):
+            auto = st.toggle(
+                "Actualizar automáticamente",
+                value=True,
+                key="vivo_auto_on",
+                help="Si lo apagas, los marcadores solo cambian cuando recargas la página.",
+            )
+            segundos = st.slider(
+                "Intervalo (segundos)",
+                10,
+                120,
+                30,
+                step=5,
+                disabled=not auto,
+                key="vivo_auto_seg",
+                help="Cada cuánto tiempo se vuelven a pedir los marcadores.",
+            )
 
     deporte = st.radio("Deporte", [NBA, FUTBOL], horizontal=True, label_visibility="collapsed", key="vivo_deporte")
 
     # Cada deporte tiene su propio panel en vivo, definido en su módulo.
     paneles = {NBA: nba.live_panel, FUTBOL: football.live_panel}
     panel = paneles[deporte]
-
-    if auto:
-        st.caption(f"🔄 Se actualiza solo cada {segundos} segundos.")
-    else:
-        st.caption("⏸️ Actualización automática apagada.")
 
     # st.fragment vuelve a ejecutar solo el panel, sin recargar toda la página ni perder los controles.
     st.fragment(panel, run_every=segundos if auto else None)()
