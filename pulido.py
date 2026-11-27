@@ -371,7 +371,7 @@ html, body {
 }
 .sl-brand-card {
   background: transparent !important;
-  border-radius: 12px !important;
+  border-radius: 0 !important;
   padding: 6px 8px 6px;
   display: flex;
   align-items: center;
@@ -379,28 +379,51 @@ html, body {
   box-shadow: none !important;
   border: none !important;
   position: relative;
-  overflow: hidden;
 }
-/* Franja de reflejo que cruza el logo cada 4 s */
-.sl-brand-card::after {
+.sl-brand-logo-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+  line-height: 0;
+  transition: transform .35s ease;
+}
+.sl-brand-logo-wrap:hover {
+  transform: scale(1.04);
+}
+/* Reflejo enmascarado exactamente a la silueta del logo (sin caja ni bordes) */
+.sl-brand-gleam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: var(--sl-logo-mask);
+  mask-image: var(--sl-logo-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  z-index: 2;
+}
+.sl-brand-gleam::after {
   content: '';
   position: absolute;
-  top: 0; bottom: 0;
+  top: -15%;
+  bottom: -15%;
   left: 0;
-  width: 32%;
+  width: 34%;
   background: linear-gradient(
     90deg,
-    transparent,
-    rgba(255,255,255,.45),
-    transparent
+    transparent 0%,
+    rgba(255,255,255,.78) 50%,
+    transparent 100%
   );
   animation: sl-logo-gleam 4s cubic-bezier(.4,0,.6,1) infinite;
   animation-delay: 1.5s;
   pointer-events: none;
-  z-index: 10;
 }
 .sl-brand-img {
-  width: 100%;
   width: 100%;
   max-width: 100%;
   height: auto;
@@ -409,10 +432,6 @@ html, body {
   border-radius: 0 !important;
   box-shadow: none !important;
   filter: none;
-  transition: transform .35s ease;
-}
-.sl-brand-img:hover {
-  transform: scale(1.04);
 }
 .sl-brand-fallback {
   font-family: 'Roboto', sans-serif;

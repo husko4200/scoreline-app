@@ -84,7 +84,12 @@ def _marca_sidebar():
         mtime = 0.0
     b64 = _logo_base64(mtime)
     if b64:
-        media = f'<img class="sl-brand-img" src="data:image/png;base64,{b64}" alt="ScoreLine"/>'
+        media = (
+            f'<div class="sl-brand-logo-wrap" style="--sl-logo-mask: url(\'data:image/png;base64,{b64}\');">'
+            f'<img class="sl-brand-img" src="data:image/png;base64,{b64}" alt="ScoreLine"/>'
+            f'<span class="sl-brand-gleam" aria-hidden="true"></span>'
+            f'</div>'
+        )
     else:
         media = '<span class="sl-brand-fallback">ScoreLine</span>'
     st.sidebar.markdown(
