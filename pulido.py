@@ -13,7 +13,9 @@ Principios de diseño
      permanece visible cuando el menú lateral está contraído.
   5. Mantiene --pl-sport: __SPORT__ para compatibilidad con otros módulos y NO altera las tablas.
 """
+import json
 import streamlit as st
+import streamlit.components.v1 as _st_comp
 
 try:
     import diseno
@@ -2507,7 +2509,11 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
     min-height: 38px !important;
   }
   .sl-mobile-nav {
-    display: flex !important;
+    display: grid !important;
+  }
+  [data-testid="stMain"] .block-container,
+  [data-testid="stMainBlockContainer"] {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .st-key-sl_hero_box {
     padding: 1.1rem 1rem !important;
@@ -3110,40 +3116,92 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   flex-shrink: 0;
 }
 
-/* Barra inferior fija solo para móvil (< 768px) */
+/* Barra inferior fija profesional solo para móvil (< 768px), montada en body */
 .sl-mobile-nav {
   display: none;
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 999990;
-  background: #15103F;
-  border-top: 1px solid rgba(196,181,253,.22);
-  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-  justify-content: space-around;
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 999990 !important;
+  background: rgba(15, 11, 46, .92);
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  backdrop-filter: blur(20px) saturate(165%);
+  border-top: 1px solid rgba(167, 139, 250, .24);
+  border-radius: 18px 18px 0 0;
+  padding: 7px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
   align-items: center;
-  box-shadow: 0 -6px 20px rgba(15,10,40,.28);
+  box-shadow: 0 -10px 30px rgba(6, 4, 22, .48);
+  transition: transform .28s cubic-bezier(.22, 1, .36, 1), opacity .22s ease;
+  will-change: transform, opacity;
+}
+.sl-mobile-nav.is-hidden,
+body:has([data-testid="stSidebar"][aria-expanded="true"]) .sl-mobile-nav,
+html:has([data-testid="stSidebar"][aria-expanded="true"]) .sl-mobile-nav,
+body:has([class*="st-key-sl_ai_drawer"]) .sl-mobile-nav,
+html:has([class*="st-key-sl_ai_drawer"]) .sl-mobile-nav {
+  opacity: 0 !important;
+  transform: translateY(115%) !important;
+  pointer-events: none !important;
 }
 .sl-mnav-item {
-  display: inline-flex;
+  position: relative;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-width: 58px;
-  min-height: 44px;
-  padding: 4px 10px;
-  border-radius: 10px;
-  color: rgba(255,255,255,.78) !important;
+  gap: 3px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 5px 4px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  color: rgba(226, 232, 240, .72) !important;
   text-decoration: none !important;
   font-family: var(--pl-font, 'Roboto', sans-serif);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: .01em;
+  line-height: 1.1;
+  transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.sl-mnav-item span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sl-mnav-item:active {
+  transform: scale(.94);
+}
+.sl-mnav-item svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  transition: transform .2s ease;
 }
 .sl-mnav-item.active {
-  background: rgba(167,139,250,.22);
+  background: linear-gradient(135deg, rgba(124, 58, 237, .34), rgba(79, 70, 229, .24));
+  border-color: rgba(167, 139, 250, .42);
   color: #FFFFFF !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 4px 12px rgba(79, 70, 229, .25);
+}
+.sl-mnav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 28%;
+  right: 28%;
+  height: 2.5px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, #A78BFA, #34D399);
+}
+.sl-mnav-item.active svg {
+  transform: translateY(-1px);
+  color: #C4B5FD;
 }
 .sl-mnav-item:focus-visible {
   outline: 2px solid #C4B5FD !important;
@@ -3670,7 +3728,13 @@ def ticker_superior(partidos=None):
 
 
 def barra_inferior_movil(seccion_actual: str):
-    """Barra inferior fija en móvil (<768px) con 4 accesos rápidos y objetivos táctiles >=44px."""
+    """Barra inferior fija en móvil (<768px), montada en body para permanecer siempre visible al hacer scroll y ocultarse al abrir el menú lateral."""
+    svgs = {
+        "inicio": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.2L12 4l8.5 7.2"/><path d="M5.8 9.8V19a1 1 0 0 0 1 1h3.4v-5.2h3.6V20h3.4a1 1 0 0 0 1-1V9.8"/></svg>',
+        "en-vivo": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M8 8a5.7 5.7 0 0 0 0 8M16 8a5.7 5.7 0 0 1 0 8M5 5a9.9 9.9 0 0 0 0 14M19 5a9.9 9.9 0 0 1 0 14"/></svg>',
+        "nba": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18"/><path d="M5.6 5.6a10 10 0 0 1 0 12.8M18.4 5.6a10 10 0 0 0 0 12.8"/></svg>',
+        "futbol": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12,8.7 15.1,11 13.9,14.7 10.1,14.7 8.9,11" fill="currentColor"/><path d="M12 8.7V3M15.1 11l5.5-1.8M13.9 14.7l3.4 4.6M10.1 14.7l-3.4 4.6M8.9 11L3.4 9.2"/></svg>',
+    }
     items = [
         ("inicio", "inicio", "Inicio"),
         ("vivo", "en-vivo", "En vivo"),
@@ -3688,9 +3752,51 @@ def barra_inferior_movil(seccion_actual: str):
         cls = "sl-mnav-item active" if activo else "sl-mnav-item"
         links.append(
             f'<a class="{cls}" href="?sec={clave}" target="_self" aria-label="Ir a {nom}">'
-            f'<span aria-hidden="true" data-icon="{ico}" data-size="18"></span><span>{nom}</span></a>'
+            f'<span aria-hidden="true">{svgs[ico]}</span><span>{nom}</span></a>'
         )
-    st.markdown(
-        f'<nav class="sl-mobile-nav" role="navigation" aria-label="Navegación móvil">{"".join(links)}</nav>',
-        unsafe_allow_html=True,
+    nav_html_json = json.dumps("".join(links))
+    _st_comp.html(
+        f"""<script>
+(function() {{
+  try {{
+    var P = window.parent;
+    if (!P || !P.document || !P.document.body) return;
+    var doc = P.document;
+    var nav = doc.getElementById('sl-mobile-nav-root');
+    if (!nav) {{
+      nav = doc.createElement('nav');
+      nav.id = 'sl-mobile-nav-root';
+      nav.className = 'sl-mobile-nav';
+      nav.setAttribute('role', 'navigation');
+      nav.setAttribute('aria-label', 'Navegación móvil');
+      doc.body.appendChild(nav);
+    }}
+    nav.innerHTML = {nav_html_json};
+
+    function syncVisibility() {{
+      var sb = doc.querySelector('[data-testid="stSidebar"]');
+      var drawer = doc.querySelector('[class*="st-key-sl_ai_drawer"]');
+      var sbOpen = sb && sb.getAttribute('aria-expanded') === 'true';
+      if (sbOpen || drawer) {{
+        nav.classList.add('is-hidden');
+      }} else {{
+        nav.classList.remove('is-hidden');
+      }}
+    }}
+    syncVisibility();
+
+    if (!P.__slMobNavObs) {{
+      P.__slMobNavObs = new P.MutationObserver(syncVisibility);
+      P.__slMobNavObs.observe(doc.body, {{
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['aria-expanded', 'class']
+      }});
+    }}
+  }} catch (e) {{}}
+}})();
+</script>""",
+        height=0,
+        width=0,
     )
