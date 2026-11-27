@@ -119,10 +119,12 @@ div[data-testid="stToolbarActions"],
 [data-testid="manage-app-button"],
 [data-testid="stEmbedFooter"],
 [class*="embedFooter"],
+[class*="embeddedAppMetaInfoBar"],
 [class*="viewerBadge"],
 [class*="profileContainer"],
 [class*="profilePreview"],
-a[href*="streamlit.io/cloud"],
+footer,
+a[href*="streamlit.io"],
 a[href*="share.streamlit.io"] {
   display: none !important;
   visibility: hidden !important;
@@ -3191,9 +3193,6 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   transition: transform .28s cubic-bezier(.22, 1, .36, 1), opacity .22s ease;
   will-change: transform, opacity;
 }
-.sl-mobile-nav.is-embed {
-  bottom: 42px !important;
-}
 [class*="st-key-sl_mob_nav_bridge"] {
   position: fixed !important;
   left: -9999px !important;
@@ -3852,21 +3851,28 @@ def barra_inferior_movil(seccion_actual: str):
     nav.classList.toggle('is-embed', Boolean(inEmbed));
     nav.innerHTML = {nav_html_json};
 
-    /* Clic en botón de la barra → activa el botón puente oculto en stMain (siempre montado e inmediato) */
-    if (!nav.__slMobClickBound) {{
-      nav.__slMobClickBound = true;
-      nav.addEventListener('click', function(ev) {{
-        var btn = ev.target.closest('[data-mob-go]');
-        if (!btn) return;
-        ev.preventDefault();
-        ev.stopPropagation();
-        var clave = btn.getAttribute('data-mob-go');
-        var target = doc.querySelector('[class*="st-key-sl_mob_go_' + clave + '"] button');
-        if (target) {{
-          target.click();
+    /* Clic en botón de la barra → activa el botón puente oculto en stMain o busca en el sidebar */
+    nav.onclick = function(ev) {{
+      var btn = ev.target.closest('[data-mob-go]');
+      if (!btn) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      var clave = btn.getAttribute('data-mob-go');
+      var target = doc.querySelector('[class*="st-key-sl_mob_go_' + clave + '"] button');
+      if (target) {{
+        target.click();
+        return;
+      }}
+      /* Respaldo: si el bridge está actualizándose, clic en el sidebar directamente */
+      var nom = (btn.querySelector('span:last-child') ? btn.querySelector('span:last-child').textContent : '').trim();
+      var sbBtns = doc.querySelectorAll('[data-testid="stSidebar"] [class*="st-key-_nav_btn_"] button');
+      for (var i = 0; i < sbBtns.length; i++) {{
+        if ((sbBtns[i].textContent || '').trim() === nom) {{
+          sbBtns[i].click();
+          break;
         }}
-      }});
-    }}
+      }}
+    }};
 
     if (P.__slMobNavObs) {{
       P.__slMobNavObs.disconnect();

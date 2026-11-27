@@ -228,7 +228,7 @@ html:has([class*="st-key-sl_ai_drawer"]) .pl-dock button.sl-ai-btn {
 @keyframes pl-pb { to { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .pl-pb { display: none; } .pl-toast { transition: none; } }
 .pl-confeti { position: fixed; inset: 0; z-index: 1000003; pointer-events: none; }
-@media (max-width: 767px) { .pl-dock { right: 12px; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); } html:has(.sl-mobile-nav.is-embed:not(.is-hidden)) .pl-dock { bottom: calc(120px + env(safe-area-inset-bottom, 0px)); } #pl-toasts { left: 10px; bottom: 82px; } }
+@media (max-width: 767px) { .pl-dock { right: 12px; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); } #pl-toasts { left: 10px; bottom: 82px; } }
 
 /* El iframe del script no ocupa espacio */
 [data-testid="stElementContainer"]:has(iframe[height="0"]), [data-testid="element-container"]:has(iframe[height="0"]) {
