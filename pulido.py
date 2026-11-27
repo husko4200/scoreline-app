@@ -167,7 +167,7 @@ header, [data-testid="stHeader"] {
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  transition: transform .15s ease, border-color .15s ease, background .15s ease !important;
+  transition: transform .15s cubic-bezier(.22, 1, .36, 1), border-color .15s cubic-bezier(.22, 1, .36, 1), background .15s cubic-bezier(.22, 1, .36, 1) !important;
 }
 [data-testid="stExpandSidebarButton"]:hover,
 [data-testid="stSidebarCollapsedControl"]:hover {
@@ -387,7 +387,7 @@ html, body {
   display: block;
   width: 100%;
   line-height: 0;
-  transition: transform .35s ease;
+  transition: transform .28s cubic-bezier(.22, 1, .36, 1);
 }
 .sl-brand-logo-wrap:hover {
   transform: scale(1.04);
@@ -399,7 +399,7 @@ html, body {
   pointer-events: none;
   overflow: hidden;
   opacity: 0;
-  transition: opacity .2s ease;
+  transition: opacity .2s cubic-bezier(.22, 1, .36, 1);
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
@@ -561,7 +561,7 @@ body .stApp [data-testid="stMain"] .stButton > button[kind="primary"] * {
   min-height: 36px !important;
   justify-content: flex-start !important;
   text-align: left !important;
-  transition: background .15s ease, color .15s ease !important;
+  transition: background .16s cubic-bezier(.22, 1, .36, 1), color .16s cubic-bezier(.22, 1, .36, 1) !important;
   margin: 0 !important;
   letter-spacing: .01em !important;
   box-shadow: none !important;
@@ -676,6 +676,60 @@ svg.sl-icon {
   padding: 9px 11px;
   margin: .45rem 0 .55rem;
   box-shadow: none;
+}
+
+/* ── Tarjeta de perfil en sidebar (dark-aware, sin inline styles) ── */
+.sl-profile-card {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  padding: .65rem .75rem;
+  margin-bottom: .6rem;
+  transition: background .18s cubic-bezier(.22, 1, .36, 1);
+}
+.sl-profile-card:hover {
+  background: rgba(255,255,255,.10);
+}
+.sl-profile-row {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+.sl-profile-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: .78rem;
+  flex-shrink: 0;
+  letter-spacing: -.01em;
+}
+.sl-profile-info {
+  min-width: 0;
+  flex: 1;
+}
+.sl-profile-name {
+  font-weight: 600;
+  font-size: .82rem;
+  color: rgba(255,255,255,.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.sl-profile-role {
+  font-size: .68rem;
+  color: rgba(255,255,255,.52);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: .01em;
+}
+.sl-profile-role.is-pro {
+  color: #FBBF24;
 }
 .sl-sp-top {
   display: flex;
@@ -826,7 +880,7 @@ svg.sl-icon {
   border: 1px solid transparent !important;
   box-shadow: none !important;
   transform: none !important;
-  transition: background .15s ease, color .15s ease, box-shadow .15s ease !important;
+  transition: background .16s cubic-bezier(.22, 1, .36, 1), color .16s cubic-bezier(.22, 1, .36, 1), box-shadow .18s cubic-bezier(.22, 1, .36, 1) !important;
   cursor: pointer !important;
 }
 [data-testid="stMain"] [data-testid="stRadio"] div[role="radiogroup"] label[data-baseweb="radio"]:hover {
@@ -965,7 +1019,7 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"] {
   color: #1E293B !important;
   font-size: .88rem !important;
   background: transparent !important;
-  transition: background .1s ease, border-color .1s ease !important;
+  transition: background .1s cubic-bezier(.22, 1, .36, 1), border-color .1s cubic-bezier(.22, 1, .36, 1) !important;
 }
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][aria-selected="true"],
 div[data-baseweb="popover"] ul[role="listbox"] li[role="option"][data-highlighted="true"],
@@ -1181,7 +1235,7 @@ div[data-baseweb="popover"] ul[role="listbox"] li[role="option"]:hover::after {
 }
 .sl-cmp-tbl tbody tr {
   border-bottom: 1px solid #F1F5F9;
-  transition: background .12s ease;
+  transition: background .12s cubic-bezier(.22, 1, .36, 1);
 }
 .sl-cmp-tbl tbody tr:last-child {
   border-bottom: none;

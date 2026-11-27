@@ -461,9 +461,9 @@ def barra_superior():
 
         with col_izq:
             if esta_autenticado():
-                badge = '<span class="auth-badge-pro">⭐ PRO ACTIVO</span>' if es_pro() else '<span class="auth-badge-free">MODO GRATUITO</span>'
+                badge = '<span class="auth-badge-pro">PRO ACTIVO</span>' if es_pro() else '<span class="auth-badge-free">MODO GRATUITO</span>'
                 if es_admin():
-                    badge = '<span class="auth-badge-pro" style="background:#4F46E5;">👑 ADMIN</span>'
+                    badge = '<span class="auth-badge-pro" style="background:#4F46E5;">ADMIN</span>'
                 st.markdown(
                     f'<div class="sl-auth-status">'
                     f'<span style="font-weight:700; color:#0F172A;">Hola, {usr.get("nombre")}</span> {badge}'
@@ -602,19 +602,19 @@ def perfil_sidebar():
     try:
         usr = usuario_actual()
         if esta_autenticado():
-            rol_txt = "👑 Administrador" if es_admin() else ("⭐ Suscripción PRO" if es_pro() else "Plan Gratuito")
+            rol_txt = "Administrador" if es_admin() else ("Suscripción PRO" if es_pro() else "Plan Gratuito")
             st.sidebar.markdown(
                 f"""
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.75rem 0.9rem; margin-bottom: 0.8rem;">
-                    <div style="display: flex; align-items: center; gap: 0.6rem;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #4F46E5; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.82rem;">
+                <div class="sl-profile-card">
+                    <div class="sl-profile-row">
+                        <div class="sl-profile-avatar">
                             {usr.get('nombre', 'U')[:1].upper()}
                         </div>
-                        <div style="min-width: 0; flex: 1;">
-                            <div style="font-weight: 700; font-size: 0.84rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <div class="sl-profile-info">
+                            <div class="sl-profile-name">
                                 {usr.get('nombre')}
                             </div>
-                            <div style="font-size: 0.72rem; color: {'#D97706' if es_pro() else '#64748B'}; font-weight: 700;">
+                            <div class="sl-profile-role {'is-pro' if es_pro() else ''}">
                                 {rol_txt}
                             </div>
                         </div>
@@ -639,7 +639,9 @@ def tarjeta_bloqueo_pro(herramienta: str = "esta herramienta", descripcion: str 
     st.markdown(
         f"""
         <div class="pro-card-lock">
-            <span class="pro-crown">👑</span>
+            <span class="pro-crown">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-4-5 4z"/><path d="M5 16h14v2H5z"/></svg>
+            </span>
             <div class="pro-title">Desbloquea {herramienta} con PRO</div>
             <div class="pro-desc">{desc}</div>
         </div>
