@@ -3219,9 +3219,17 @@ html:has([class*="st-key-sl_ai_drawer"]) .sl-mobile-nav {
   padding: 2px 5px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .sl-score-flash, .sl-skel-card, .live-dot, .sl-sp-live-dot, .ticker-live-dot {
+  .sl-score-flash, .sl-skel-card, .live-dot, .sl-sp-live-dot, .ticker-live-dot,
+  .sl-brand-gleam::after, .sl-brand-dot {
     animation: none !important;
   }
+  .sl-mobile-nav, .sl-mnav-item, .sl-brand-logo-wrap {
+    transition: none !important;
+  }
+}
+
+[data-testid="stMetricValue"], .sl-score-flash {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Tarjeta ScoreLine Pro dorada en el sidebar */

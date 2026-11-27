@@ -480,10 +480,10 @@ def barra_superior():
 
         with col_der:
             if esta_autenticado():
-                if st.button("🚪 Cerrar sesión", key="top_logout", use_container_width=True):
+                if st.button("Cerrar sesión", key="top_logout", use_container_width=True):
                     cerrar_sesion()
             else:
-                if st.button("✨ Iniciar Sesión / Registrarse", type="primary", key="top_login", use_container_width=True):
+                if st.button("Iniciar sesión / Registrarse", type="primary", key="top_login", use_container_width=True):
                     st.session_state[MODAL_KEY] = True
 
         # Si se pulsa el botón, mostrar formulario desplegable
@@ -495,7 +495,7 @@ def barra_superior():
 
 def dialogo_autenticacion():
     """Ventana elegante de inicio de sesión, registro gratuito y plan Pro."""
-    with st.expander("🔐 ScoreLine · Acceso a tu Cuenta", expanded=True):
+    with st.expander("ScoreLine · Acceso a tu cuenta", expanded=True):
         st.markdown(
             '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #4F46E5;'
             'border-radius:10px;padding:9px 14px;margin-bottom:8px;font-size:.83rem;color:#334155;">'
@@ -504,7 +504,7 @@ def dialogo_autenticacion():
             '</div>',
             unsafe_allow_html=True,
         )
-        t1, t2, t3 = st.tabs(["👤 Iniciar sesión", "✨ Crear cuenta gratis", "💎 ScoreLine Pro"])
+        t1, t2, t3 = st.tabs(["Iniciar sesión", "Crear cuenta gratis", "ScoreLine Pro"])
 
         with t1:
             with st.form("form_modal_login"):
@@ -556,7 +556,7 @@ def dialogo_autenticacion():
                 acepta_terminos = st.checkbox("Acepto los Términos y Condiciones y la Política de Privacidad", key="m_reg_terminos")
                 mayor_18 = st.checkbox("Confirmo que soy mayor de 18 años", key="m_reg_mayor18")
                 recibir_novedades = st.checkbox("Quiero recibir novedades y promociones (opcional)", key="m_reg_novedades")
-                if st.form_submit_button("✨ Crear cuenta gratuita", type="primary", use_container_width=True):
+                if st.form_submit_button("Crear cuenta gratuita", type="primary", use_container_width=True):
                     digitos_tel = "".join(c for c in reg_tel if c.isdigit())
                     if not reg_tel.strip() or len(digitos_tel) < 7:
                         st.error("Ingresa un número de teléfono válido.")
@@ -648,7 +648,7 @@ def tarjeta_bloqueo_pro(herramienta: str = "esta herramienta", descripcion: str 
     )
     col1, col2, col3 = st.columns([1, 1.4, 1])
     with col2:
-        if st.button("✨ Iniciar Sesión o Desbloquear Acceso PRO", type="primary", key=f"btn_lock_{herramienta}", use_container_width=True):
+        if st.button("Iniciar sesión o desbloquear Pro", type="primary", key=f"btn_lock_{herramienta}", use_container_width=True):
             st.session_state[MODAL_KEY] = True
             st.rerun()
 

@@ -344,12 +344,12 @@ def modal_pro(motivo: str = ""):
         st.markdown(
             '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;'
             'margin:6px 0 4px;padding-top:8px;border-top:1px solid #E2E8F0;">'
-            '<span style="font-weight:700;font-size:.92rem;color:#0F172A;">🔐 Accede a tu cuenta</span>'
+            '<span style="font-weight:700;font-size:.92rem;color:#0F172A;">Accede a tu cuenta</span>'
             '<span style="font-size:.76rem;color:#64748B;">Inicia sesión o regístrate gratis para continuar</span>'
             '</div>',
             unsafe_allow_html=True,
         )
-        t1, t2 = st.tabs(["👤 Iniciar sesión", "✨ Crear cuenta gratis"])
+        t1, t2 = st.tabs(["Iniciar sesión", "Crear cuenta gratis"])
         with t1:
             with st.form("form_pro_login"):
                 st.markdown(
@@ -379,7 +379,7 @@ def modal_pro(motivo: str = ""):
                 rmail = c_m.text_input("Correo electrónico", placeholder="tu@correo.com")
                 rpwd = st.text_input("Contraseña (mínimo 6 caracteres)", type="password", placeholder="••••••••")
                 mayor18 = st.checkbox("Confirmo que soy mayor de 18 años")
-                if st.form_submit_button("✨ Crear mi cuenta gratis", type="primary", use_container_width=True):
+                if st.form_submit_button("Crear mi cuenta gratis", type="primary", use_container_width=True):
                     if not mayor18:
                         st.error("Debes confirmar que tienes al menos 18 años.")
                     else:

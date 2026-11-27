@@ -40,17 +40,17 @@ html { scroll-behavior: smooth; }
 html.pl-pausa #pl-aurora i { animation-play-state: paused; }
 html.pl-lite #pl-aurora { display: none; }
 
-/* ============ Entrada escalonada: se repite SOLO al cambiar de sección (el nombre de la animación cambia). Las tablas no se animan. ============ */
-@keyframes pl-in-__IDX__ { from { opacity: 0; transform: translate3d(0, 16px, 0); } to { opacity: 1; transform: none; } }
+/* ============ Entrada escalonada (Emil Kowalski: rápida, sutil, curva exponencial). Las tablas no se animan. ============ */
+@keyframes pl-in-__IDX__ { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
 [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:not(:has(.tabla-wrap)):not(:has([data-testid="stDataFrame"])):not(:has([data-testid="stTable"])):not(:has(.tg-wrap)) {
-  animation: pl-in-__IDX__ .55s cubic-bezier(.2, .7, .2, 1) both; }
-[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(2) { animation-delay: .05s; }
-[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(3) { animation-delay: .10s; }
-[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(4) { animation-delay: .15s; }
-[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(5) { animation-delay: .20s; }
-[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(n+6) { animation-delay: .25s; }
-@keyframes pl-in-lado { from { opacity: 0; transform: translate3d(-12px, 0, 0); } to { opacity: 1; transform: none; } }
-[data-testid="stSidebar"] div[role="radiogroup"] label { animation: pl-in-lado .45s cubic-bezier(.2, .7, .2, 1) both; }
+  animation: pl-in-__IDX__ .34s cubic-bezier(.22, 1, .36, 1) both; }
+[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(2) { animation-delay: .03s; }
+[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(3) { animation-delay: .06s; }
+[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(4) { animation-delay: .09s; }
+[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(5) { animation-delay: .12s; }
+[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:nth-child(n+6) { animation-delay: .15s; }
+@keyframes pl-in-lado { from { opacity: 0; transform: translate3d(-8px, 0, 0); } to { opacity: 1; transform: none; } }
+[data-testid="stSidebar"] div[role="radiogroup"] label { animation: pl-in-lado .28s cubic-bezier(.22, 1, .36, 1) both; }
 [data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(2) { animation-delay: .04s; }
 [data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(3) { animation-delay: .08s; }
 [data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(4) { animation-delay: .12s; }
@@ -79,9 +79,10 @@ div[role="radiogroup"] label:has(input:checked) { animation: pl-pop .32s cubic-b
 [data-testid="stMain"] button[data-baseweb="tab"] { position: relative; overflow: hidden; }
 [data-testid="stMain"] button[data-baseweb="tab"][aria-selected="true"] { box-shadow: none !important; }
 [data-testid="stMain"] button[data-baseweb="tab"]::after { content: ""; position: absolute; left: 12%; right: 12%; bottom: 0; height: 2px; border-radius: 2px;
-  background: var(--pl-acc, #4F46E5); transform: scaleX(0); transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+  background: var(--pl-acc, #4F46E5); transform: scaleX(0); transition: transform .22s cubic-bezier(.22, 1, .36, 1); }
 [data-testid="stMain"] button[data-baseweb="tab"][aria-selected="true"]::after { transform: scaleX(1); }
-.stButton > button:active, .stDownloadButton > button:active { transform: scale(.96) !important; }
+.stButton > button, .stDownloadButton > button { transition: transform .14s cubic-bezier(.32, .72, 0, 1), background-color .16s ease, border-color .16s ease, box-shadow .18s cubic-bezier(.22, 1, .36, 1); }
+.stButton > button:active, .stDownloadButton > button:active { transform: scale(.97) !important; }
 .stButton > button, .stDownloadButton > button, label[data-baseweb="radio"] { position: relative; overflow: hidden; }
 
 /* ============ Onda al pulsar (la crea el script) ============ */
