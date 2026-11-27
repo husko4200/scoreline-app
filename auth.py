@@ -626,6 +626,7 @@ def perfil_sidebar():
         else:
             if st.sidebar.button("Cuenta / Iniciar sesión", key="sb_login_btn", use_container_width=True):
                 st.session_state[MODAL_KEY] = True
+                st.session_state["_cerrar_sidebar_login"] = True
                 st.rerun()
     except Exception:
         pass

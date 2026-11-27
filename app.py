@@ -137,6 +137,42 @@ def _auto_abrir_sidebar_escritorio():
     )
 
 
+def _auto_cerrar_sidebar_login():
+    """Cierra el menú lateral automáticamente cuando el usuario pulsa Iniciar sesión."""
+    if not st.session_state.pop("_cerrar_sidebar_login", False):
+        return
+    _comp.html(
+        """<script>
+(function() {
+  try {
+    var P = window.parent;
+    if (!P || !P.document) return;
+    function collapseIfOpen() {
+      var sb = P.document.querySelector('[data-testid="stSidebar"]');
+      if (sb && sb.getAttribute('aria-expanded') !== 'false') {
+        var btn = P.document.querySelector(
+          '[data-testid="stSidebarCollapseButton"] button, ' +
+          '[data-testid="stSidebarHeader"] button, ' +
+          '[data-testid="stSidebar"] button[aria-label*="Collapse" i], ' +
+          '[data-testid="stSidebar"] button[aria-label*="Close" i]'
+        );
+        if (btn) btn.click();
+      }
+      var main = P.document.querySelector('[data-testid="stAppViewContainer"], [data-testid="stMain"]');
+      if (main) main.scrollTop = 0;
+      if (P.scrollTo) P.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setTimeout(collapseIfOpen, 40);
+    setTimeout(collapseIfOpen, 180);
+    setTimeout(collapseIfOpen, 450);
+  } catch(e) {}
+})();
+</script>""",
+        height=0,
+        width=0,
+    )
+
+
 def pagina_inicio():
     """Inicio: panel principal ScoreLine y debajo la portada personalizada."""
     inicio.pagina_inicio()
@@ -301,6 +337,7 @@ efectos.aplicar(estilo)  # colores por deporte + animaciones
 pulido.aplicar(estilo)   # identidad visual ScoreLine unificada (no toca las tablas)
 movimiento.aplicar(estilo, list(SECCIONES).index(seccion))  # animaciones, interacciones y sonido (va al último)
 _auto_abrir_sidebar_escritorio()
+_auto_cerrar_sidebar_login()
 _comp.html(
     """<script>
 (function() {
