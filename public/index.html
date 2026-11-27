@@ -182,25 +182,30 @@
       transition: opacity .25s ease;
     }
 
-    /* Enlace discreto solo si demora más de 15 s */
+    /* Botón discreto de reintento local si demora más de 15 s (nunca redirige fuera) */
     .sl-fallback-link {
       margin-top: 6px;
+      font-family: inherit;
       font-size: .78rem;
+      font-weight: 600;
       color: #A5B4FC;
-      text-decoration: none;
+      background: rgba(165, 180, 252, .08);
+      border: 1px solid rgba(165, 180, 252, .25);
+      border-radius: 999px;
+      padding: 6px 14px;
+      cursor: pointer;
       opacity: 0;
       pointer-events: none;
-      border-bottom: 1px dashed rgba(165, 180, 252, .45);
-      padding-bottom: 2px;
-      transition: opacity .4s ease, color .15s ease;
+      transition: opacity .4s ease, color .15s ease, background .15s ease;
     }
     .sl-fallback-link.is-visible {
-      opacity: .85;
+      opacity: .9;
       pointer-events: auto;
     }
     .sl-fallback-link:hover {
       opacity: 1;
       color: #5EEAD4;
+      background: rgba(94, 234, 212, .12);
     }
 
     iframe#sl-app {
@@ -238,9 +243,9 @@
 
       <p class="sl-msg" id="sl-msg">Conectando con marcadores en vivo…</p>
 
-      <a class="sl-fallback-link" id="sl-direct" href="#" rel="noopener">
-        ¿Tarda demasiado? Abrir en otra pestaña
-      </a>
+      <button type="button" class="sl-fallback-link" id="sl-retry">
+        ¿Tarda demasiado? Reintentar conexión
+      </button>
     </div>
   </div>
 
@@ -253,7 +258,7 @@
       var frame = document.getElementById("sl-app");
       var loader = document.getElementById("sl-loader");
       var msg = document.getElementById("sl-msg");
-      var link = document.getElementById("sl-direct");
+      var retryBtn = document.getElementById("sl-retry");
 
       var pasos = [
         "Conectando con marcadores en vivo…",
@@ -278,8 +283,13 @@
         return;
       }
 
-      link.href = base;
       frame.src = base + "/?embed=true";
+
+      retryBtn.addEventListener("click", function () {
+        retryBtn.classList.remove("is-visible");
+        msg.textContent = "Reconectando con ScoreLine…";
+        frame.src = base + "/?embed=true&_t=" + Date.now();
+      });
 
       function ocultarLoader() {
         clearInterval(msgTimer);
@@ -290,10 +300,10 @@
 
       frame.addEventListener("load", ocultarLoader);
 
-      // Si después de 15 s el iframe aún no respondió, mostrar enlace discreto
+      // Si después de 15 s el iframe aún no respondió, mostrar botón de reintento local
       setTimeout(function () {
         if (!loader.classList.contains("is-ready")) {
-          link.classList.add("is-visible");
+          retryBtn.classList.add("is-visible");
         }
       }, 15000);
     })();
