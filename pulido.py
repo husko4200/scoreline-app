@@ -3195,12 +3195,15 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
 }
 [class*="st-key-sl_mob_nav_bridge"] {
   position: fixed !important;
-  left: -9999px !important;
-  top: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
   width: 1px !important;
   height: 1px !important;
   overflow: hidden !important;
   opacity: 0 !important;
+  z-index: -1 !important;
+}
+.sl-mnav-item > * {
   pointer-events: none !important;
 }
 .sl-mobile-nav.is-hidden,
@@ -3851,23 +3854,25 @@ def barra_inferior_movil(seccion_actual: str):
     nav.classList.toggle('is-embed', Boolean(inEmbed));
     nav.innerHTML = {nav_html_json};
 
-    /* Clic en botón de la barra → activa el botón puente oculto en stMain o busca en el sidebar */
+    /* Clic en botón de la barra → activa el botón puente oculto (ignorando nodos stale) o sidebar */
     nav.onclick = function(ev) {{
       var btn = ev.target.closest('[data-mob-go]');
       if (!btn) return;
       ev.preventDefault();
       ev.stopPropagation();
       var clave = btn.getAttribute('data-mob-go');
-      var target = doc.querySelector('[class*="st-key-sl_mob_go_' + clave + '"] button');
-      if (target) {{
-        target.click();
-        return;
+      var targets = doc.querySelectorAll('[class*="st-key-sl_mob_go_' + clave + '"] button');
+      for (var t = 0; t < targets.length; t++) {{
+        if (!targets[t].closest('[data-stale="true"]') && !targets[t].disabled) {{
+          targets[t].click();
+          return;
+        }}
       }}
       /* Respaldo: si el bridge está actualizándose, clic en el sidebar directamente */
       var nom = (btn.querySelector('span:last-child') ? btn.querySelector('span:last-child').textContent : '').trim();
       var sbBtns = doc.querySelectorAll('[data-testid="stSidebar"] [class*="st-key-_nav_btn_"] button');
       for (var i = 0; i < sbBtns.length; i++) {{
-        if ((sbBtns[i].textContent || '').trim() === nom) {{
+        if (!sbBtns[i].closest('[data-stale="true"]') && (sbBtns[i].textContent || '').trim() === nom) {{
           sbBtns[i].click();
           break;
         }}
