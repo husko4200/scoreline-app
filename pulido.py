@@ -396,8 +396,8 @@ html, body {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  -webkit-mask-image: var(--sl-logo-mask);
-  mask-image: var(--sl-logo-mask);
+  opacity: 0;
+  transition: opacity .2s ease;
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
@@ -405,6 +405,9 @@ html, body {
   -webkit-mask-position: center;
   mask-position: center;
   z-index: 2;
+}
+.sl-brand-gleam.is-masked {
+  opacity: 1;
 }
 .sl-brand-gleam::after {
   content: '';

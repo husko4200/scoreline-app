@@ -85,7 +85,7 @@ def _marca_sidebar():
     b64 = _logo_base64(mtime)
     if b64:
         media = (
-            f'<div class="sl-brand-logo-wrap" style="--sl-logo-mask: url(\'data:image/png;base64,{b64}\');">'
+            f'<div class="sl-brand-logo-wrap">'
             f'<img class="sl-brand-img" src="data:image/png;base64,{b64}" alt="ScoreLine"/>'
             f'<span class="sl-brand-gleam" aria-hidden="true"></span>'
             f'</div>'
@@ -115,6 +115,21 @@ def _auto_abrir_sidebar_escritorio():
       stStyle.textContent = '[data-testid="manage-app-button"],[class*="viewerBadge"],[class*="profileContainer"],[class*="profilePreview"],a[href*="streamlit.io/cloud"],a[href*="share.streamlit.io"]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
       (P.document.head || P.document.documentElement).appendChild(stStyle);
     }
+    function maskLogoGleam() {
+      var wraps = P.document.querySelectorAll('.sl-brand-logo-wrap');
+      for (var w = 0; w < wraps.length; w++) {
+        var img = wraps[w].querySelector('.sl-brand-img');
+        var gleam = wraps[w].querySelector('.sl-brand-gleam');
+        if (img && gleam && img.src && !gleam.classList.contains('is-masked')) {
+          var m = 'url("' + img.src + '")';
+          gleam.style.webkitMaskImage = m;
+          gleam.style.maskImage = m;
+          gleam.classList.add('is-masked');
+        }
+      }
+    }
+    maskLogoGleam();
+    setTimeout(maskLogoGleam, 80);
     if (P.__slSbInit) return;
     P.__slSbInit = true;
     for (var i = P.localStorage.length - 1; i >= 0; i--) {
