@@ -3773,26 +3773,27 @@ def barra_inferior_movil(seccion_actual: str):
     }}
     nav.innerHTML = {nav_html_json};
 
+    if (P.__slMobNavObs) {{
+      P.__slMobNavObs.disconnect();
+      P.__slMobNavObs = null;
+    }}
+
     function syncVisibility() {{
       var sb = doc.querySelector('[data-testid="stSidebar"]');
       var drawer = doc.querySelector('[class*="st-key-sl_ai_drawer"]');
       var sbOpen = sb && sb.getAttribute('aria-expanded') === 'true';
-      if (sbOpen || drawer) {{
-        nav.classList.add('is-hidden');
-      }} else {{
-        nav.classList.remove('is-hidden');
+      var shouldHide = Boolean(sbOpen || drawer);
+      if (shouldHide !== nav.classList.contains('is-hidden')) {{
+        nav.classList.toggle('is-hidden', shouldHide);
       }}
     }}
     syncVisibility();
 
-    if (!P.__slMobNavObs) {{
-      P.__slMobNavObs = new P.MutationObserver(syncVisibility);
-      P.__slMobNavObs.observe(doc.body, {{
-        subtree: true,
-        childList: true,
-        attributes: true,
-        attributeFilter: ['aria-expanded', 'class']
-      }});
+    var sbEl = doc.querySelector('[data-testid="stSidebar"]');
+    if (sbEl && !sbEl.__slMobObserved) {{
+      sbEl.__slMobObserved = true;
+      var sbObs = new P.MutationObserver(syncVisibility);
+      sbObs.observe(sbEl, {{ attributes: true, attributeFilter: ['aria-expanded'] }});
     }}
   }} catch (e) {{}}
 }})();
