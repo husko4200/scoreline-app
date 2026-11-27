@@ -532,6 +532,13 @@ _motivo_pro = st.session_state.pop("_abrir_modal_pro", None)
 if _motivo_pro:
     planes.modal_pro(_motivo_pro)
 
+# Botones ocultos puente para la barra inferior móvil (cambia de sección sin recargar URL ni depender del sidebar)
+with st.container(key="sl_mob_nav_bridge"):
+    for _m_clave, _m_sec in (("inicio", INICIO), ("vivo", VIVO), ("nba", NBA), ("futbol", FUTBOL)):
+        if st.button(_m_clave, key=f"sl_mob_go_{_m_clave}"):
+            st.session_state["seccion"] = _m_sec
+            st.rerun()
+
 # Botón oculto que alterna el panel lateral de ScoreLine AI desde el dock flotante
 if st.button("ScoreLine AI", key="sl_ai_open_btn") and not _motivo_pro:
     st.session_state["_sl_ai_drawer_open"] = not st.session_state.get("_sl_ai_drawer_open", False)

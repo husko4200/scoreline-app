@@ -3191,6 +3191,19 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   transition: transform .28s cubic-bezier(.22, 1, .36, 1), opacity .22s ease;
   will-change: transform, opacity;
 }
+.sl-mobile-nav.is-embed {
+  bottom: 42px !important;
+}
+[class*="st-key-sl_mob_nav_bridge"] {
+  position: fixed !important;
+  left: -9999px !important;
+  top: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 .sl-mobile-nav.is-hidden,
 body:has([data-testid="stSidebar"][aria-expanded="true"]) .sl-mobile-nav,
 html:has([data-testid="stSidebar"][aria-expanded="true"]) .sl-mobile-nav,
@@ -3815,7 +3828,7 @@ def barra_inferior_movil(seccion_actual: str):
         )
         cls = "sl-mnav-item active" if activo else "sl-mnav-item"
         buttons_html.append(
-            f'<button type="button" class="{cls}" data-nav-label="{nom}" aria-label="Ir a {nom}">'
+            f'<button type="button" class="{cls}" data-mob-go="{clave}" aria-label="Ir a {nom}">'
             f'<span aria-hidden="true">{svgs[ico]}</span><span>{nom}</span></button>'
         )
     nav_html_json = json.dumps("".join(buttons_html))
@@ -3835,23 +3848,22 @@ def barra_inferior_movil(seccion_actual: str):
       nav.setAttribute('aria-label', 'Navegación móvil');
       doc.body.appendChild(nav);
     }}
+    var inEmbed = (P !== P.top) || (P.location && P.location.search && P.location.search.indexOf('embed=true') !== -1);
+    nav.classList.toggle('is-embed', Boolean(inEmbed));
     nav.innerHTML = {nav_html_json};
 
-    /* Clic en botón de la barra → busca y hace clic en el botón correspondiente del sidebar (sin recargar iframe) */
+    /* Clic en botón de la barra → activa el botón puente oculto en stMain (siempre montado e inmediato) */
     if (!nav.__slMobClickBound) {{
       nav.__slMobClickBound = true;
       nav.addEventListener('click', function(ev) {{
-        var btn = ev.target.closest('[data-nav-label]');
+        var btn = ev.target.closest('[data-mob-go]');
         if (!btn) return;
         ev.preventDefault();
         ev.stopPropagation();
-        var targetLabel = (btn.getAttribute('data-nav-label') || '').trim();
-        var btns = doc.querySelectorAll('[data-testid="stSidebar"] [class*="st-key-_nav_btn_"] button');
-        for (var i = 0; i < btns.length; i++) {{
-          if ((btns[i].textContent || '').trim() === targetLabel) {{
-            btns[i].click();
-            break;
-          }}
+        var clave = btn.getAttribute('data-mob-go');
+        var target = doc.querySelector('[class*="st-key-sl_mob_go_' + clave + '"] button');
+        if (target) {{
+          target.click();
         }}
       }});
     }}
