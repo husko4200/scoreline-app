@@ -3219,7 +3219,9 @@ html:has([class*="st-key-sl_ai_drawer"]) .sl-mobile-nav {
   font-weight: 600;
   letter-spacing: .01em;
   line-height: 1.1;
-  transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease;
+  background: none;
+  cursor: pointer;
+  transition: background .18s cubic-bezier(.22, 1, .36, 1), color .18s cubic-bezier(.22, 1, .36, 1), border-color .18s cubic-bezier(.22, 1, .36, 1), transform .12s cubic-bezier(.22, 1, .36, 1);
   -webkit-tap-highlight-color: transparent;
 }
 .sl-mnav-item span:last-child {
@@ -3803,7 +3805,7 @@ def barra_inferior_movil(seccion_actual: str):
         ("nba", "nba", "NBA"),
         ("futbol", "futbol", "Fútbol"),
     ]
-    links = []
+    buttons_html = []
     for clave, ico, nom in items:
         activo = (
             (clave == "inicio" and "Inicio" in seccion_actual)
@@ -3812,11 +3814,11 @@ def barra_inferior_movil(seccion_actual: str):
             or (clave == "futbol" and "Fútbol" in seccion_actual)
         )
         cls = "sl-mnav-item active" if activo else "sl-mnav-item"
-        links.append(
-            f'<a class="{cls}" href="?sec={clave}" target="_self" aria-label="Ir a {nom}">'
-            f'<span aria-hidden="true">{svgs[ico]}</span><span>{nom}</span></a>'
+        buttons_html.append(
+            f'<button type="button" class="{cls}" data-nav-label="{nom}" aria-label="Ir a {nom}">'
+            f'<span aria-hidden="true">{svgs[ico]}</span><span>{nom}</span></button>'
         )
-    nav_html_json = json.dumps("".join(links))
+    nav_html_json = json.dumps("".join(buttons_html))
     _st_comp.html(
         f"""<script>
 (function() {{
@@ -3834,6 +3836,25 @@ def barra_inferior_movil(seccion_actual: str):
       doc.body.appendChild(nav);
     }}
     nav.innerHTML = {nav_html_json};
+
+    /* Clic en botón de la barra → busca y hace clic en el botón correspondiente del sidebar (sin recargar iframe) */
+    if (!nav.__slMobClickBound) {{
+      nav.__slMobClickBound = true;
+      nav.addEventListener('click', function(ev) {{
+        var btn = ev.target.closest('[data-nav-label]');
+        if (!btn) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        var targetLabel = (btn.getAttribute('data-nav-label') || '').trim();
+        var btns = doc.querySelectorAll('[data-testid="stSidebar"] [class*="st-key-_nav_btn_"] button');
+        for (var i = 0; i < btns.length; i++) {{
+          if ((btns[i].textContent || '').trim() === targetLabel) {{
+            btns[i].click();
+            break;
+          }}
+        }}
+      }});
+    }}
 
     if (P.__slMobNavObs) {{
       P.__slMobNavObs.disconnect();
