@@ -3177,7 +3177,7 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) .top-ticker-bar {
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  z-index: 999990 !important;
+  z-index: 2147483640 !important;
   background: rgba(15, 11, 46, .92);
   -webkit-backdrop-filter: blur(20px) saturate(165%);
   backdrop-filter: blur(20px) saturate(165%);

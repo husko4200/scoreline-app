@@ -112,7 +112,7 @@ def _auto_abrir_sidebar_escritorio():
     if (!P.document.getElementById('sl-hide-st-badges')) {
       var stStyle = P.document.createElement('style');
       stStyle.id = 'sl-hide-st-badges';
-      stStyle.textContent = '[data-testid="manage-app-button"],[class*="viewerBadge"],[class*="profileContainer"],[class*="profilePreview"],a[href*="streamlit.io/cloud"],a[href*="share.streamlit.io"]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
+      stStyle.textContent = '[data-testid="manage-app-button"],[class*="viewerBadge"],[class*="profileContainer"],[class*="profilePreview"],[class*="embeddedAppMetaInfoBar"],[class*="embedFooter"],[data-testid="stEmbedFooter"],a[href*="streamlit.io"],a[href*="share.streamlit.io"],footer{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;height:0!important;overflow:hidden!important;}';
       (P.document.head || P.document.documentElement).appendChild(stStyle);
     }
     function maskLogoGleam() {
